@@ -1,8 +1,8 @@
 [package]
 name = "fcpw"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
-rust-version = "1.97"
+rust-version = "1.88"
 license = "MIT OR Apache-2.0"
 description = "Fast, variation-tolerant CBOR codec"
 documentation = "https://docs.rs/fcpw"
@@ -22,7 +22,9 @@ diagnostic = ["alloc"]
 
 [dependencies]
 serde = { version = "1", default-features = false, optional = true }
-serde_bytes = { version = "0.11", default-features = false, features = ["alloc"], optional = true }
+serde_bytes = { version = "0.11", default-features = false, features = [
+  "alloc",
+], optional = true }
 rayon = { version = "1", optional = true }
 smoothutf8 = "0.2"
 simdutf8 = { version = "0.1", default-features = false }

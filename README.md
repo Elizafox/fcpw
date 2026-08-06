@@ -106,12 +106,12 @@ Criterion benchmarks compare FCPW with
 the following Criterion time estimates; lower is better and the fastest result
 in each row is bold.
 
-| Operation | Input | FCPW | cbor4ii | serde_cbor | Ciborium |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Decode small record | 503 B | **310 ns** | 454 ns | 399 ns | 1.46 µs |
-| Decode medium record | 7,210 B | **5.73 µs** | 7.43 µs | 6.41 µs | 20.6 µs |
-| Encode small record | 503 B | **183 ns** | 341 ns | 487 ns | 472 ns |
-| Encode medium record | 7,210 B | **1.70 µs** | 1.92 µs | 3.86 µs | 3.60 µs |
+| Operation            |   Input |        FCPW | cbor4ii | serde_cbor | Ciborium |
+| -------------------- | ------: | ----------: | ------: | ---------: | -------: |
+| Decode small record  |   503 B |  **310 ns** |  454 ns |     399 ns |  1.46 µs |
+| Decode medium record | 7,210 B | **5.73 µs** | 7.43 µs |    6.41 µs |  20.6 µs |
+| Encode small record  |   503 B |  **183 ns** |  341 ns |     487 ns |   472 ns |
+| Encode medium record | 7,210 B | **1.70 µs** | 1.92 µs |    3.86 µs |  3.60 µs |
 
 These results were measured on August 5, 2026, with Rust 1.97.1 on an Intel
 Core Ultra 7 155H running Linux, using FCPW 0.1.0, cbor4ii 1.2.2,
@@ -122,5 +122,5 @@ hardware and toolchain; run `cargo bench --bench codec` to measure the
 
 ## MSRV and licensing
 
-FCPW uses Rust 2024 and requires Rust 1.97 or newer. It is available under your
+FCPW uses Rust 2024 and requires Rust 1.88 or newer. It is available under your
 choice of the MIT or Apache-2.0 license.
