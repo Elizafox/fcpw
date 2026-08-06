@@ -4,7 +4,7 @@
 
 `fcpw` is a variation-tolerant CBOR codec for Rust that aims to be the fastest
 available CBOR parser in the general case. The name is an acronym for the
-**F**astest **C**BOR **P**arser in the West**. The name and phrase are
+**F**astest **C**BOR **P**arser in the **W**est. The name and phrase are
 an allusion to FFTW, the Fastest Fourier Transform in the West, because I'm
 not particularly original. Performance is not pursued at the expense of
 reliability; correctness and fault tolerance are equal design goals.
