@@ -1,5 +1,7 @@
 # fcpw
 
+[![CI](https://github.com/Elizafox/fcpw/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Elizafox/fcpw/actions/workflows/ci.yml)
+
 `fcpw` is a variation-tolerant CBOR codec for Rust that aims to be the fastest
 available CBOR parser in the general case: the **Fastest CBOR Parser in the
 West**. The name and phrase are alliterative with FFTW, the **Fastest Fourier
@@ -106,10 +108,10 @@ in each row is bold.
 
 | Operation | Input | FCPW | cbor4ii | serde_cbor | Ciborium |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Decode small record | 503 B | 448 ns | **427 ns** | 434 ns | 1.47 µs |
-| Decode medium record | 7,210 B | **6.34 µs** | 7.63 µs | 6.68 µs | 20.7 µs |
-| Encode small record | 503 B | **194 ns** | 296 ns | 511 ns | 467 ns |
-| Encode medium record | 7,210 B | **1.73 µs** | 1.77 µs | 3.78 µs | 3.55 µs |
+| Decode small record | 503 B | **310 ns** | 454 ns | 399 ns | 1.46 µs |
+| Decode medium record | 7,210 B | **5.73 µs** | 7.43 µs | 6.41 µs | 20.6 µs |
+| Encode small record | 503 B | **183 ns** | 341 ns | 487 ns | 472 ns |
+| Encode medium record | 7,210 B | **1.70 µs** | 1.92 µs | 3.86 µs | 3.60 µs |
 
 These results were measured on August 5, 2026, with Rust 1.97.1 on an Intel
 Core Ultra 7 155H running Linux, using FCPW 0.1.0, cbor4ii 1.2.2,
