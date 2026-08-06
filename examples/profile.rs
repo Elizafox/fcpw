@@ -75,7 +75,13 @@ fn main() {
         .unwrap_or("100000")
         .parse()
         .unwrap();
-    let value = record(16);
+    let record_scale: usize = std::env::args()
+        .nth(3)
+        .as_deref()
+        .unwrap_or("16")
+        .parse()
+        .unwrap();
+    let value = record(record_scale);
     let integers: Vec<i32> = (0..4096).map(|value| value - 2048).collect();
     let booleans: Vec<bool> = (0..4096).map(|value| value % 3 != 0).collect();
     let signed8: Vec<i8> = (0..4096).map(|value| value as i8).collect();

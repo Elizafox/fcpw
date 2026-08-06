@@ -1,5 +1,3 @@
-use core::str;
-
 use crate::{DecodeOptions, Error, ErrorKind, Result, Validation};
 
 #[cfg(feature = "alloc")]
@@ -9,7 +7,17 @@ use alloc::{borrow::Cow, boxed::Box, string::String, vec::Vec};
 
 #[inline]
 fn validated_str(bytes: &[u8], at: usize) -> Result<&str> {
-    str::from_utf8(bytes).map_err(|_| Error::new(ErrorKind::InvalidUtf8, at))
+    if bytes.len() < 64 {
+        smoothutf8::from_utf8(bytes).ok_or(Error::new(ErrorKind::InvalidUtf8, at))
+    } else {
+        validated_str_simd(bytes, at)
+    }
+}
+
+#[cold]
+#[inline(never)]
+fn validated_str_simd(bytes: &[u8], at: usize) -> Result<&str> {
+    simdutf8::basic::from_utf8(bytes).map_err(|_| Error::new(ErrorKind::InvalidUtf8, at))
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -91,6 +99,7 @@ impl<'de> SliceDecoder<'de> {
         &self.input[self.pos..]
     }
     /// Returns the next initial byte without consuming it.
+    #[inline(always)]
     pub fn peek(&self) -> Result<u8> {
         self.input
             .get(self.pos)
@@ -2844,6 +2853,7 @@ impl<'de> Parser<'de> {
         self.decoder.remaining()
     }
     #[cfg(feature = "serde")]
+    #[inline(always)]
     pub(crate) fn peek_initial(&self) -> Result<u8> {
         self.decoder.peek()
     }
@@ -2931,10 +2941,12 @@ impl<'de> Parser<'de> {
         }
     }
     #[cfg(feature = "serde")]
+    #[inline(always)]
     pub(crate) fn read_text(&mut self, initial: u8) -> Result<&'de str> {
         self.decoder.text_basic(initial)
     }
     #[cfg(feature = "serde")]
+    #[inline(always)]
     pub(crate) fn read_bytes(&mut self, initial: u8) -> Result<&'de [u8]> {
         self.decoder.bytes_basic(initial, 2)
     }

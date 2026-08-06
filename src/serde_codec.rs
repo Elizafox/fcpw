@@ -2581,7 +2581,6 @@ impl<'de> Deserializer<'de> {
             visitor.visit_map(DirectMap {
                 deserializer: self,
                 remaining,
-                expecting_value: false,
                 previous_key: None,
             })
         } else {
@@ -2649,7 +2648,6 @@ impl<'de> SeqAccess<'de> for IndefiniteSeq<'_, 'de> {
 struct DirectMap<'a, 'de> {
     deserializer: &'a mut Deserializer<'de>,
     remaining: u64,
-    expecting_value: bool,
     previous_key: Option<&'de [u8]>,
 }
 
@@ -2664,14 +2662,10 @@ impl<'de> MapAccess<'de> for DirectMap<'_, 'de> {
 
     #[inline(always)]
     fn next_key_seed<K: DeserializeSeed<'de>>(&mut self, seed: K) -> Result<Option<K::Value>> {
-        if self.expecting_value {
-            return Err(Error::new(ErrorKind::Message, self.deserializer.position()));
-        }
         if self.remaining == 0 {
             return Ok(None);
         }
         self.remaining -= 1;
-        self.expecting_value = true;
         let start = self.deserializer.position();
         let key = seed.deserialize(&mut *self.deserializer)?;
         if self.deserializer.parser.is_deterministic() {
@@ -2692,10 +2686,6 @@ impl<'de> MapAccess<'de> for DirectMap<'_, 'de> {
 
     #[inline(always)]
     fn next_value_seed<V: DeserializeSeed<'de>>(&mut self, seed: V) -> Result<V::Value> {
-        if !self.expecting_value {
-            return Err(Error::new(ErrorKind::Message, self.deserializer.position()));
-        }
-        self.expecting_value = false;
         seed.deserialize(&mut *self.deserializer)
     }
 
@@ -2788,7 +2778,6 @@ impl<'de> de::Deserializer<'de> for &mut Deserializer<'de> {
                 let result = visitor.visit_map(DirectMap {
                     deserializer: self,
                     remaining,
-                    expecting_value: false,
                     previous_key: None,
                 });
                 self.depth -= 1;
