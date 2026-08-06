@@ -1,0 +1,47 @@
+[package]
+name = "fcpw"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97"
+license = "MIT OR Apache-2.0"
+description = "Fast, variation-tolerant CBOR codec"
+documentation = "https://docs.rs/fcpw"
+repository = "https://github.com/Elizafox/fcpw"
+readme = "README.md"
+keywords = ["cbor", "serde", "serialization", "no-std", "rfc-8949"]
+categories = ["encoding", "no-std", "parser-implementations"]
+exclude = [
+    ".github/",
+    ".gitignore",
+    "ci/",
+    "fuzz/",
+]
+
+[features]
+default = ["std", "alloc", "serde"]
+alloc = []
+std = ["alloc", "serde?/std"]
+serde = ["dep:serde", "dep:serde_bytes", "serde/alloc", "alloc"]
+parallel = ["std", "alloc", "serde", "dep:rayon"]
+diagnostic = ["alloc"]
+
+[dependencies]
+serde = { version = "1", default-features = false, optional = true }
+serde_bytes = { version = "0.11", default-features = false, features = ["alloc"], optional = true }
+rayon = { version = "1", optional = true }
+
+[dev-dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+proptest = "1"
+criterion = { version = "0.8.2", features = ["html_reports"] }
+ciborium = "0.2"
+serde_cbor = "0.11"
+cbor4ii = { version = "1.2", features = ["serde1", "use_std"] }
+
+[[bench]]
+name = "codec"
+harness = false
+
+[package.metadata.docs.rs]
+all-features = true

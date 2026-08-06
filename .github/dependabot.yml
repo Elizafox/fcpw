@@ -1,0 +1,56 @@
+version: 2
+
+updates:
+  # The release crate and each standalone support crate have their own lockfile,
+  # so Dependabot must scan all three manifests independently.
+  - package-ecosystem: cargo
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/Los_Angeles
+    open-pull-requests-limit: 5
+    groups:
+      cargo-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: cargo
+    directory: "/ci/perf"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:15"
+      timezone: America/Los_Angeles
+    open-pull-requests-limit: 5
+    groups:
+      performance-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: cargo
+    directory: "/fuzz"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:30"
+      timezone: America/Los_Angeles
+    open-pull-requests-limit: 5
+    groups:
+      fuzz-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:45"
+      timezone: America/Los_Angeles
+    open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns:
+          - "*"

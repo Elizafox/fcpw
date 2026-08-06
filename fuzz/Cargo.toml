@@ -1,0 +1,31 @@
+[package]
+name = "fcpw-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde_cbor = "0.11"
+fcpw = { path = "..", features = ["serde"] }
+
+[[bin]]
+name = "low_level_encoder"
+path = "fuzz_targets/low_level_encoder.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "serde_encoder"
+path = "fuzz_targets/serde_encoder.rs"
+test = false
+doc = false
+bench = false
+
+[workspace]
+members = ["."]

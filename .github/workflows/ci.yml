@@ -1,0 +1,148 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 8 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux
+            runner: ubuntu-latest
+          - name: macOS
+            runner: macos-latest
+          - name: Windows
+            runner: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - name: Check formatting
+        if: runner.os == 'Linux'
+        run: cargo fmt --all -- --check
+      - name: Build minimal feature combinations
+        run: |
+          cargo check --locked --no-default-features
+          cargo check --locked --no-default-features --features alloc
+      - name: Test all features
+        run: cargo test --locked --all-features
+
+  freebsd:
+    name: FreeBSD 15.1
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Start FreeBSD VM
+        uses: cross-platform-actions/action@v1.3.0
+        with:
+          operating_system: freebsd
+          version: "15.1"
+          architecture: x86-64
+          cpu_count: 4
+          memory: 6G
+      - name: Install Rust in FreeBSD
+        shell: cpa.sh {0}
+        run: |
+          sudo pkg install -y curl
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
+      - name: Build and test in FreeBSD
+        shell: cpa.sh {0}
+        run: |
+          . "$HOME/.cargo/env"
+          cargo check --locked --no-default-features
+          cargo check --locked --no-default-features --features alloc
+          cargo test --locked --all-features
+
+  performance:
+    name: Performance
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TARGET_DIR: ${{ github.workspace }}/performance-target
+    steps:
+      - name: Check out current revision
+        uses: actions/checkout@v7
+        with:
+          path: current
+          fetch-depth: 0
+      - name: Check out pull request base
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: baseline
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: performance
+      - name: Prepare base benchmark driver
+        if: github.event_name == 'pull_request'
+        run: |
+          mkdir -p baseline/ci/perf
+          cp -R current/ci/perf/. baseline/ci/perf/
+      - name: Measure pull request base
+        if: github.event_name == 'pull_request'
+        working-directory: baseline
+        run: cargo bench --locked --manifest-path ci/perf/Cargo.toml --bench performance -- --save-baseline pr-base --noplot --color never
+      - name: Measure current revision against base
+        if: github.event_name == 'pull_request'
+        working-directory: current
+        shell: bash
+        run: |
+          set -o pipefail
+          cargo bench --locked --manifest-path ci/perf/Cargo.toml --bench performance -- --baseline pr-base --noplot --color never | tee performance.txt
+      - name: Measure current revision
+        if: github.event_name != 'pull_request'
+        working-directory: current
+        shell: bash
+        run: |
+          set -o pipefail
+          cargo bench --locked --manifest-path ci/perf/Cargo.toml --bench performance -- --save-baseline current --noplot --color never | tee performance.txt
+      - name: Publish performance summary
+        working-directory: current
+        shell: bash
+        run: |
+          {
+            echo '## Performance'
+            echo
+            echo 'Criterion uses 95% confidence, a 5% significance level, and a 15% noise threshold.'
+            echo
+            echo '```text'
+            cat performance.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Reject obvious regressions
+        if: github.event_name == 'pull_request'
+        working-directory: current
+        shell: bash
+        run: |
+          if grep -Fq 'Performance has regressed.' performance.txt; then
+            echo 'A statistically significant performance regression exceeded 15%.'
+            exit 1
+          fi
+      - name: Upload Criterion results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: criterion-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            current/performance.txt
+            performance-target/criterion
+          if-no-files-found: warn
+          retention-days: 30

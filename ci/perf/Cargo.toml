@@ -1,0 +1,20 @@
+[package]
+name = "fcpw-ci-performance"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[dependencies]
+fcpw = { path = "../.." }
+serde = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+criterion = "0.8.2"
+
+[[bench]]
+name = "performance"
+path = "performance.rs"
+harness = false
+
+[workspace]
+members = ["."]

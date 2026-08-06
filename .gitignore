@@ -1,0 +1,47 @@
+# Rust build and generated tooling output
+/target/
+/fuzz/target/
+/fuzz/corpus/
+/fuzz/artifacts/
+/fuzz/coverage/
+/ci/perf/target/
+**/*.rs.bk
+/coverage/
+*.profraw
+*.profdata
+lcov.info
+/compile_commands.json
+/rust-project.json
+
+# Native package artifacts (package recipes and scripts remain tracked)
+*.apk
+*.deb
+*.rpm
+
+# Local runtime output
+*.log
+*.pid
+*.sock
+core
+core.*
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+.abuild/
+*.rsa
+*.rsa.pub
+
+# Editor state
+/.idea/
+/.vscode/
+*.swp
+*.swo
+*~
+
+# OS metadata and interrupted patch output
+.DS_Store
+Thumbs.db
+*.orig
+*.rej
