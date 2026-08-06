@@ -26,32 +26,46 @@ fn validated_str_simd(bytes: &[u8], at: usize) -> Result<&str> {
 pub enum Event<'de> {
     /// An unsigned integer.
     Unsigned(u64),
+
     /// A negative integer represented by its mathematical value.
     Negative(i128),
+
     /// A definite-length byte string.
     Bytes(&'de [u8]),
+
     /// A definite-length UTF-8 text string.
     Text(&'de str),
+
     /// The start of an indefinite-length byte string.
     IndefiniteBytes,
+
     /// The start of an indefinite-length text string.
     IndefiniteText,
+
     /// The start of an array; `None` denotes indefinite length.
     Array(Option<u64>),
+
     /// The start of a map; `None` denotes indefinite length.
     Map(Option<u64>),
+
     /// A semantic tag followed by its tagged item.
     Tag(u64),
+
     /// An unassigned simple value.
     Simple(u8),
+
     /// A Boolean value.
     Bool(bool),
+
     /// The null value.
     Null,
+
     /// The undefined value.
     Undefined,
+
     /// A floating-point value, widened to binary64 when necessary.
     Float(f64),
+
     /// The break stop code ending an indefinite-length item.
     Break,
 }
@@ -59,11 +73,13 @@ pub enum Event<'de> {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 /// The complete encoded bytes of one CBOR data item.
 pub struct RawValue<'de>(&'de [u8]);
+
 impl<'de> RawValue<'de> {
     /// Wraps bytes containing one encoded CBOR item without validating them.
     pub const fn new(bytes: &'de [u8]) -> Self {
         Self(bytes)
     }
+
     /// Returns the wrapped encoded bytes.
     pub const fn as_bytes(&self) -> &'de [u8] {
         self.0
@@ -82,6 +98,7 @@ impl<'de> SliceDecoder<'de> {
     pub fn new(input: &'de [u8]) -> Self {
         Self::with_options(input, DecodeOptions::default())
     }
+
     /// Creates a decoder with explicit validation and resource limits.
     pub fn with_options(input: &'de [u8], options: DecodeOptions) -> Self {
         Self {
@@ -90,14 +107,17 @@ impl<'de> SliceDecoder<'de> {
             options,
         }
     }
+
     /// Returns the byte offset of the next item.
     pub fn position(&self) -> usize {
         self.pos
     }
+
     /// Returns the input bytes not yet consumed.
     pub fn remaining(&self) -> &'de [u8] {
         &self.input[self.pos..]
     }
+
     /// Returns the next initial byte without consuming it.
     #[inline(always)]
     pub fn peek(&self) -> Result<u8> {
@@ -106,6 +126,7 @@ impl<'de> SliceDecoder<'de> {
             .copied()
             .ok_or(Error::new(ErrorKind::Eof, self.pos))
     }
+
     /// Verifies that no disallowed trailing bytes remain.
     pub fn finish(&self) -> Result<()> {
         if self.options.allow_trailing || self.pos == self.input.len() {
@@ -114,12 +135,14 @@ impl<'de> SliceDecoder<'de> {
             Err(Error::new(ErrorKind::TrailingData, self.pos))
         }
     }
+
     #[inline]
     fn byte(&mut self) -> Result<u8> {
         let b = self.peek()?;
         self.pos += 1;
         Ok(b)
     }
+
     #[inline]
     fn take(&mut self, n: usize) -> Result<&'de [u8]> {
         let end = self
@@ -133,6 +156,7 @@ impl<'de> SliceDecoder<'de> {
         self.pos = end;
         Ok(result)
     }
+
     #[inline]
     fn argument(&mut self, ai: u8, head: usize) -> Result<Option<u64>> {
         let (value, width) = match ai {
@@ -150,9 +174,9 @@ impl<'de> SliceDecoder<'de> {
             31 => return Ok(None),
             _ => return Err(Error::new(ErrorKind::InvalidAdditionalInfo, head)),
         };
+
         // For major type 7, additional information 25..=27 selects a
-        // floating-point width; the following bytes are payload bits, not an
-        // integer argument whose encoded width can be minimized.
+        // floating-point width.
         if self.options.validation == Validation::Deterministic && self.input[head] >> 5 != 7 {
             let preferred = match value {
                 0..=23 => 0,
@@ -167,6 +191,7 @@ impl<'de> SliceDecoder<'de> {
         }
         Ok(Some(value))
     }
+
     #[inline]
     fn header(&mut self) -> Result<(u8, Option<u64>, usize)> {
         let offset = self.pos;
@@ -175,6 +200,7 @@ impl<'de> SliceDecoder<'de> {
         let arg = self.argument(initial & 31, offset)?;
         Ok((major, arg, offset))
     }
+
     #[inline(always)]
     /// Decodes an unsigned integer.
     pub fn unsigned(&mut self) -> Result<u64> {
@@ -185,6 +211,7 @@ impl<'de> SliceDecoder<'de> {
             Err(Error::new(ErrorKind::UnexpectedType, at))
         }
     }
+
     /// Decodes a positive or negative integer.
     pub fn integer(&mut self) -> Result<i128> {
         let (m, n, at) = self.header()?;
@@ -195,6 +222,7 @@ impl<'de> SliceDecoder<'de> {
             _ => Err(Error::new(ErrorKind::UnexpectedType, at)),
         }
     }
+
     #[cfg(any(feature = "alloc", feature = "serde"))]
     #[inline(always)]
     fn basic_integer_argument(&mut self, additional: u8, at: usize) -> Result<u64> {
@@ -209,6 +237,7 @@ impl<'de> SliceDecoder<'de> {
             _ => unreachable!(),
         }
     }
+
     #[cfg(feature = "serde")]
     #[inline(always)]
     fn unsigned_basic(&mut self, initial: u8) -> Result<u64> {
@@ -219,6 +248,7 @@ impl<'de> SliceDecoder<'de> {
         }
         self.basic_integer_argument(initial & 31, at)
     }
+
     #[cfg(any(feature = "alloc", feature = "serde"))]
     #[inline(always)]
     fn integer_i64_basic(&mut self, initial: u8) -> Result<i64> {
@@ -235,6 +265,7 @@ impl<'de> SliceDecoder<'de> {
             _ => Err(Error::new(ErrorKind::UnexpectedType, at)),
         }
     }
+
     #[cfg(any(feature = "alloc", feature = "serde"))]
     #[inline(always)]
     fn integer_i32_basic(&mut self, initial: u8) -> Result<i32> {
@@ -251,6 +282,7 @@ impl<'de> SliceDecoder<'de> {
             _ => Err(Error::new(ErrorKind::UnexpectedType, at)),
         }
     }
+
     #[cfg(any(feature = "alloc", feature = "serde"))]
     #[inline(always)]
     fn integer_i16_basic(&mut self, initial: u8) -> Result<i16> {
@@ -267,6 +299,7 @@ impl<'de> SliceDecoder<'de> {
             _ => Err(Error::new(ErrorKind::UnexpectedType, at)),
         }
     }
+
     #[cfg(any(feature = "alloc", feature = "serde"))]
     #[inline(always)]
     fn integer_i8_basic(&mut self, initial: u8) -> Result<i8> {
@@ -283,6 +316,7 @@ impl<'de> SliceDecoder<'de> {
             _ => Err(Error::new(ErrorKind::UnexpectedType, at)),
         }
     }
+
     #[cfg(feature = "serde")]
     #[inline(always)]
     fn bool_basic(&mut self, initial: u8) -> Result<bool> {
@@ -294,6 +328,7 @@ impl<'de> SliceDecoder<'de> {
             _ => Err(Error::new(ErrorKind::UnexpectedType, at)),
         }
     }
+
     #[cfg(feature = "serde")]
     #[inline(always)]
     fn unsigned_u8_one_byte(&mut self) -> Result<u8> {
@@ -305,6 +340,7 @@ impl<'de> SliceDecoder<'de> {
         }
         Ok(value)
     }
+
     #[cfg(feature = "serde")]
     #[inline(always)]
     fn unsigned_u8_basic(&mut self, initial: u8) -> Result<u8> {
@@ -316,6 +352,7 @@ impl<'de> SliceDecoder<'de> {
         }
         u8::try_from(argument).map_err(|_| Error::new(ErrorKind::IntegerOverflow, self.pos))
     }
+
     #[cfg(feature = "serde")]
     #[inline(always)]
     fn collection_basic(&mut self, initial: u8, expected_major: u8) -> Result<Option<u64>> {
@@ -330,6 +367,7 @@ impl<'de> SliceDecoder<'de> {
             self.basic_integer_argument(initial & 31, at).map(Some)
         }
     }
+
     /// Decodes a definite-length byte string.
     pub fn bytes(&mut self) -> Result<&'de [u8]> {
         let (m, n, at) = self.header()?;
@@ -339,6 +377,7 @@ impl<'de> SliceDecoder<'de> {
         let n = n.ok_or(Error::new(ErrorKind::UnexpectedType, at))?;
         self.take(usize::try_from(n).map_err(|_| Error::new(ErrorKind::CollectionLimit, at))?)
     }
+
     #[cfg(feature = "serde")]
     #[inline(always)]
     fn bytes_basic(&mut self, initial: u8, expected_major: u8) -> Result<&'de [u8]> {
@@ -350,12 +389,14 @@ impl<'de> SliceDecoder<'de> {
         let length = self.basic_integer_argument(initial & 31, at)?;
         self.take(usize::try_from(length).map_err(|_| Error::new(ErrorKind::CollectionLimit, at))?)
     }
+
     /// Decodes a definite-length UTF-8 text string.
     pub fn text(&mut self) -> Result<&'de str> {
         let at = self.pos;
         let bytes = self.bytes_major(3)?;
         validated_str(bytes, at)
     }
+
     #[cfg(feature = "serde")]
     #[inline(always)]
     fn text_basic(&mut self, initial: u8) -> Result<&'de str> {
@@ -383,6 +424,7 @@ impl<'de> SliceDecoder<'de> {
             _ => Err(Error::new(ErrorKind::UnexpectedType, at)),
         }
     }
+
     #[inline]
     fn validate_deterministic_float(&self, additional: u8, value: u64, at: usize) -> Result<()> {
         if self.options.validation != Validation::Deterministic {
@@ -406,6 +448,7 @@ impl<'de> SliceDecoder<'de> {
             Ok(())
         }
     }
+
     #[inline(always)]
     fn float_basic(&mut self, initial: u8) -> Result<f64> {
         self.pos += 1;
@@ -425,6 +468,7 @@ impl<'de> SliceDecoder<'de> {
             _ => unreachable!(),
         }
     }
+
     #[cfg(feature = "serde")]
     #[inline(always)]
     fn f32_basic(&mut self) -> Result<f32> {
@@ -432,6 +476,7 @@ impl<'de> SliceDecoder<'de> {
         let bits = u32::from_be_bytes(self.take(4)?.try_into().unwrap());
         Ok(f32::from_bits(bits))
     }
+
     fn bytes_major(&mut self, expected: u8) -> Result<&'de [u8]> {
         let (m, n, at) = self.header()?;
         if m != expected {
@@ -440,18 +485,21 @@ impl<'de> SliceDecoder<'de> {
         let n = n.ok_or(Error::new(ErrorKind::UnexpectedType, at))?;
         self.take(usize::try_from(n).map_err(|_| Error::new(ErrorKind::CollectionLimit, at))?)
     }
+
     /// Consumes and returns the complete encoding of the next item.
     pub fn raw(&mut self) -> Result<RawValue<'de>> {
         let start = self.pos;
         self.skip()?;
         Ok(RawValue(&self.input[start..self.pos]))
     }
+
     #[cfg(feature = "parallel")]
     pub(crate) fn raw_structural(&mut self) -> Result<RawValue<'de>> {
         let start = self.pos;
         self.skip_structural_at(0)?;
         Ok(RawValue(&self.input[start..self.pos]))
     }
+
     /// Consumes the next complete item without constructing a value.
     pub fn skip(&mut self) -> Result<()> {
         if self.options.validation == Validation::Deterministic {
@@ -460,6 +508,7 @@ impl<'de> SliceDecoder<'de> {
             self.skip_basic_at(0)
         }
     }
+
     #[inline]
     fn basic_header(&mut self) -> Result<(u8, Option<u64>, usize)> {
         let at = self.pos;
@@ -475,10 +524,12 @@ impl<'de> SliceDecoder<'de> {
         };
         Ok((initial >> 5, argument, at))
     }
+
     fn skip_basic_at(&mut self, depth: usize) -> Result<()> {
         if depth > self.options.max_depth {
             return Err(Error::new(ErrorKind::DepthLimit, self.pos));
         }
+
         let (major, argument, at) = self.basic_header()?;
         match major {
             0 | 1 => {
@@ -534,8 +585,10 @@ impl<'de> SliceDecoder<'de> {
             }
             _ => unreachable!(),
         }
+
         Ok(())
     }
+
     fn skip_basic_container(
         &mut self,
         length: Option<u64>,
@@ -575,8 +628,10 @@ impl<'de> SliceDecoder<'de> {
                 }
             }
         }
+
         Ok(())
     }
+
     fn skip_at(&mut self, depth: usize, validate_utf8: bool) -> Result<()> {
         if depth > self.options.max_depth {
             return Err(Error::new(ErrorKind::DepthLimit, self.pos));
@@ -640,8 +695,10 @@ impl<'de> SliceDecoder<'de> {
             },
             _ => unreachable!(),
         }
+
         Ok(())
     }
+
     fn skip_container(
         &mut self,
         len: Option<u64>,
@@ -694,6 +751,7 @@ impl<'de> SliceDecoder<'de> {
                 }
             }
         }
+
         Ok(())
     }
 
@@ -781,6 +839,7 @@ impl<'de> SliceDecoder<'de> {
             }
             _ => unreachable!(),
         }
+
         Ok(())
     }
 
@@ -824,6 +883,7 @@ impl<'de> SliceDecoder<'de> {
                 }
             }
         }
+
         Ok(())
     }
 }
@@ -916,6 +976,7 @@ fn decode_borrowed_string<'de>(
     if decoder.options.validation == Validation::Deterministic {
         return Err(Error::new(ErrorKind::NonDeterministic, at));
     }
+
     if major == 2 {
         let mut joined = Vec::new();
         loop {
@@ -961,6 +1022,7 @@ fn decode_borrowed_string<'de>(
                 .map_err(|_| Error::new(ErrorKind::CollectionLimit, chunk_at))?;
             joined.push_str(validated_str(decoder.take(chunk_length)?, chunk_at)?);
         }
+
         Ok(BorrowedValue::Text(Cow::Owned(joined)))
     }
 }
@@ -999,6 +1061,7 @@ fn decode_borrowed_array<'de>(
             values.push(decode_borrowed_value_at(decoder, depth + 1)?);
         }
     }
+
     Ok(BorrowedValue::Array(values))
 }
 
@@ -1043,6 +1106,7 @@ fn decode_borrowed_map<'de>(
             entries.push((key, value));
         }
     }
+
     Ok(BorrowedValue::Map(entries))
 }
 
@@ -1155,6 +1219,7 @@ pub fn from_slice_u64_array(input: &[u8]) -> Result<Vec<u64>> {
         values.push(decoder.unsigned()?);
     }
     decoder.finish()?;
+
     Ok(values)
 }
 
@@ -1196,6 +1261,7 @@ pub fn from_slice_u32_array(input: &[u8]) -> Result<Vec<u32>> {
         );
     }
     decoder.finish()?;
+
     Ok(values)
 }
 
@@ -1237,6 +1303,7 @@ pub fn from_slice_u16_array(input: &[u8]) -> Result<Vec<u16>> {
         );
     }
     decoder.finish()?;
+
     Ok(values)
 }
 
@@ -1306,6 +1373,7 @@ fn decode_u16_body(
         values.push(value);
         remaining -= 1;
     }
+
     Ok(pos)
 }
 
@@ -1378,6 +1446,7 @@ fn decode_u32_body(
         values.push(value);
         remaining -= 1;
     }
+
     Ok(pos)
 }
 
@@ -1508,6 +1577,7 @@ pub fn from_slice_bool_array(input: &[u8]) -> Result<Vec<bool>> {
         }
     }
     decoder.finish()?;
+
     Ok(values)
 }
 
@@ -1549,6 +1619,7 @@ pub fn from_slice_u8_array(input: &[u8]) -> Result<Vec<u8>> {
         );
     }
     decoder.finish()?;
+
     Ok(values)
 }
 
@@ -1593,6 +1664,7 @@ fn decode_u8_body(
         values.push(value);
         remaining -= 1;
     }
+
     Ok(pos)
 }
 
@@ -1677,6 +1749,7 @@ fn decode_bool_body(
         ]);
         index += 8;
     }
+
     for (tail, initial) in body[index..].iter().copied().enumerate() {
         match initial {
             0xf4 => values.push(false),
@@ -1684,6 +1757,7 @@ fn decode_bool_body(
             _ => return Err(Error::new(ErrorKind::UnexpectedType, start + index + tail)),
         }
     }
+
     Ok(end)
 }
 
@@ -1849,6 +1923,7 @@ fn decode_u64_body(
         values.push(value);
         remaining -= 1;
     }
+
     Ok(pos)
 }
 
@@ -1990,6 +2065,7 @@ fn decode_i64_body(
         values.push(value);
         remaining -= 1;
     }
+
     Ok(pos)
 }
 
@@ -2062,6 +2138,7 @@ pub fn from_slice_i16_array(input: &[u8]) -> Result<Vec<i16>> {
         values.push(decode_i16_array_element(&mut decoder)?);
     }
     decoder.finish()?;
+
     Ok(values)
 }
 
@@ -2099,6 +2176,7 @@ pub fn from_slice_i8_array(input: &[u8]) -> Result<Vec<i8>> {
         values.push(decode_i8_array_element(&mut decoder)?);
     }
     decoder.finish()?;
+
     Ok(values)
 }
 
@@ -2174,6 +2252,7 @@ fn decode_i8_body(
         values.push(value);
         remaining -= 1;
     }
+
     Ok(pos)
 }
 
@@ -2228,6 +2307,7 @@ fn decode_i16_body(
         values.push(value);
         remaining -= 1;
     }
+
     Ok(pos)
 }
 
@@ -2281,6 +2361,7 @@ fn decode_i32_body(
         values.push(value);
         remaining -= 1;
     }
+
     Ok(pos)
 }
 
@@ -2363,6 +2444,7 @@ pub fn from_slice_f32_array(input: &[u8]) -> Result<Vec<f32>> {
         }
     }
     decoder.finish()?;
+
     Ok(values)
 }
 
@@ -2409,6 +2491,7 @@ pub fn from_slice_f32_array_into(input: &[u8], output: &mut Vec<f32>) -> Result<
     if result.is_err() {
         output.clear();
     }
+
     result
 }
 
@@ -2446,6 +2529,7 @@ fn decode_fixed_f32_body(body: &[u8], length: usize, values: &mut Vec<f32>) -> b
         pos += 5;
         remaining -= 1;
     }
+
     true
 }
 
@@ -2515,6 +2599,7 @@ pub fn from_slice_f64_array(input: &[u8]) -> Result<Vec<f64>> {
         }
     }
     decoder.finish()?;
+
     Ok(values)
 }
 
@@ -2530,6 +2615,7 @@ pub fn from_slice_f64_array_into(input: &[u8], output: &mut Vec<f64>) -> Result<
         if major != 4 {
             return Err(Error::new(ErrorKind::UnexpectedType, at));
         }
+
         if let Some(length) = length {
             let length = checked_collection_len(&decoder, length, at)?;
             if let Some(byte_length) = length.checked_mul(9)
@@ -2558,9 +2644,11 @@ pub fn from_slice_f64_array_into(input: &[u8], output: &mut Vec<f64>) -> Result<
         }
         decoder.finish()
     })();
+
     if result.is_err() {
         output.clear();
     }
+
     result
 }
 
@@ -2598,6 +2686,7 @@ fn decode_fixed_f64_body(body: &[u8], length: usize, values: &mut Vec<f64>) -> b
         pos += 9;
         remaining -= 1;
     }
+
     true
 }
 
@@ -2630,6 +2719,7 @@ pub(crate) fn decode_owned_value(input: &[u8]) -> Result<Value> {
     let mut decoder = SliceDecoder::new(input);
     let value = decode_owned_value_at(&mut decoder, 0)?;
     decoder.finish()?;
+
     Ok(value)
 }
 
@@ -2719,6 +2809,7 @@ fn decode_owned_string(
                 .map_err(|_| Error::new(ErrorKind::CollectionLimit, chunk_at))?;
             joined.extend_from_slice(decoder.take(chunk_length)?);
         }
+
         Ok(Value::Bytes(joined))
     } else {
         let mut joined = String::new();
@@ -2742,6 +2833,7 @@ fn decode_owned_string(
                 .map_err(|_| Error::new(ErrorKind::CollectionLimit, chunk_at))?;
             joined.push_str(validated_str(decoder.take(chunk_length)?, chunk_at)?);
         }
+
         Ok(Value::Text(joined))
     }
 }
@@ -2831,6 +2923,7 @@ fn decode_owned_map(
 pub struct Parser<'de> {
     decoder: SliceDecoder<'de>,
 }
+
 impl<'de> Parser<'de> {
     /// Creates a parser using [`DecodeOptions::default`].
     pub fn new(input: &'de [u8]) -> Self {
@@ -2838,25 +2931,30 @@ impl<'de> Parser<'de> {
             decoder: SliceDecoder::new(input),
         }
     }
+
     /// Creates a parser with explicit decoding options.
     pub fn with_options(input: &'de [u8], options: DecodeOptions) -> Self {
         Self {
             decoder: SliceDecoder::with_options(input, options),
         }
     }
+
     /// Returns the byte offset of the next event.
     pub fn position(&self) -> usize {
         self.decoder.position()
     }
+
     /// Returns the input bytes not yet consumed by the parser.
     pub fn remaining(&self) -> &'de [u8] {
         self.decoder.remaining()
     }
+
     #[cfg(feature = "serde")]
     #[inline(always)]
     pub(crate) fn peek_initial(&self) -> Result<u8> {
         self.decoder.peek()
     }
+
     #[cfg(feature = "serde")]
     pub(crate) fn read_float(&mut self, initial: u8) -> Result<f64> {
         if self.decoder.options.validation == Validation::Deterministic {
@@ -2865,6 +2963,7 @@ impl<'de> Parser<'de> {
             self.decoder.float_basic(initial)
         }
     }
+
     #[cfg(feature = "serde")]
     #[inline(always)]
     pub(crate) fn read_f32(&mut self) -> Result<f32> {
@@ -2874,6 +2973,7 @@ impl<'de> Parser<'de> {
             self.decoder.f32_basic()
         }
     }
+
     #[cfg(feature = "serde")]
     #[inline(always)]
     pub(crate) fn read_unsigned(&mut self, initial: u8) -> Result<u64> {
@@ -2883,46 +2983,55 @@ impl<'de> Parser<'de> {
             self.decoder.unsigned_basic(initial)
         }
     }
+
     #[cfg(feature = "serde")]
     #[inline(always)]
     pub(crate) fn read_i64(&mut self, initial: u8) -> Result<i64> {
         self.decoder.integer_i64_basic(initial)
     }
+
     #[cfg(feature = "serde")]
     #[inline(always)]
     pub(crate) fn read_i32(&mut self, initial: u8) -> Result<i32> {
         self.decoder.integer_i32_basic(initial)
     }
+
     #[cfg(feature = "serde")]
     #[inline(always)]
     pub(crate) fn read_i16(&mut self, initial: u8) -> Result<i16> {
         self.decoder.integer_i16_basic(initial)
     }
+
     #[cfg(feature = "serde")]
     #[inline(always)]
     pub(crate) fn read_i8(&mut self, initial: u8) -> Result<i8> {
         self.decoder.integer_i8_basic(initial)
     }
+
     #[cfg(feature = "serde")]
     #[inline(always)]
     pub(crate) fn read_bool(&mut self, initial: u8) -> Result<bool> {
         self.decoder.bool_basic(initial)
     }
+
     #[cfg(feature = "serde")]
     #[inline(always)]
     pub(crate) fn consume_one(&mut self) {
         self.decoder.pos += 1;
     }
+
     #[cfg(feature = "serde")]
     #[inline(always)]
     pub(crate) fn read_u8_one_byte(&mut self) -> Result<u8> {
         self.decoder.unsigned_u8_one_byte()
     }
+
     #[cfg(feature = "serde")]
     #[inline(always)]
     pub(crate) fn read_u8(&mut self, initial: u8) -> Result<u8> {
         self.decoder.unsigned_u8_basic(initial)
     }
+
     #[cfg(feature = "serde")]
     #[inline(always)]
     pub(crate) fn read_collection(
@@ -2940,31 +3049,38 @@ impl<'de> Parser<'de> {
             self.decoder.collection_basic(initial, expected_major)
         }
     }
+
     #[cfg(feature = "serde")]
     #[inline(always)]
     pub(crate) fn read_text(&mut self, initial: u8) -> Result<&'de str> {
         self.decoder.text_basic(initial)
     }
+
     #[cfg(feature = "serde")]
     #[inline(always)]
     pub(crate) fn read_bytes(&mut self, initial: u8) -> Result<&'de [u8]> {
         self.decoder.bytes_basic(initial, 2)
     }
+
     #[cfg(feature = "serde")]
     pub(crate) fn skip_item(&mut self) -> Result<()> {
         self.decoder.skip()
     }
+
     #[cfg(feature = "serde")]
     pub(crate) fn is_deterministic(&self) -> bool {
         self.decoder.options.validation == Validation::Deterministic
     }
+
     #[cfg(feature = "serde")]
     pub(crate) fn raw_range(&self, start: usize, end: usize) -> &'de [u8] {
         &self.decoder.input[start..end]
     }
 }
+
 impl<'de> Iterator for Parser<'de> {
     type Item = Result<Event<'de>>;
+
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         if self.decoder.pos == self.decoder.input.len() {
@@ -3051,6 +3167,7 @@ pub struct SequenceDecoder<'de> {
     decoder: SliceDecoder<'de>,
     index: usize,
 }
+
 impl<'de> SequenceDecoder<'de> {
     /// Creates a sequence decoder using [`DecodeOptions::default`].
     pub fn new(input: &'de [u8]) -> Self {
@@ -3059,6 +3176,7 @@ impl<'de> SequenceDecoder<'de> {
             index: 0,
         }
     }
+
     /// Creates a sequence decoder with explicit decoding options.
     pub fn with_options(input: &'de [u8], options: DecodeOptions) -> Self {
         Self {
@@ -3067,8 +3185,10 @@ impl<'de> SequenceDecoder<'de> {
         }
     }
 }
+
 impl<'de> Iterator for SequenceDecoder<'de> {
     type Item = Result<RawValue<'de>>;
+
     fn next(&mut self) -> Option<Self::Item> {
         if self.decoder.pos == self.decoder.input.len() {
             return None;

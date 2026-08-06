@@ -4,8 +4,10 @@ pub enum Validation {
     /// Checks structural validity needed to decode the requested value.
     #[default]
     Basic,
+
     /// Additionally validates skipped text strings and nested item structure.
     Strict,
+
     /// Requires deterministic encoding as defined by RFC 8949.
     Deterministic,
 }

@@ -17,6 +17,7 @@ impl de::Error for Error {
         Error::new(ErrorKind::Message, 0)
     }
 }
+
 impl ser::Error for Error {
     fn custom<T: core::fmt::Display>(_msg: T) -> Self {
         Error::new(ErrorKind::Message, 0)
@@ -69,6 +70,7 @@ impl From<EncodeError> for Error {
 }
 
 type EncodeResult<T> = core::result::Result<T, EncodeError>;
+
 // Covers common sub-kilobyte records without making one-shot buffers too large.
 const INITIAL_OUTPUT_CAPACITY: usize = 512;
 
@@ -76,6 +78,7 @@ const INITIAL_OUTPUT_CAPACITY: usize = 512;
 pub fn from_slice<'de, T: Deserialize<'de>>(input: &'de [u8]) -> Result<T> {
     from_slice_with_options(input, DecodeOptions::default())
 }
+
 /// Deserializes exactly one CBOR item using explicit decoding options.
 pub fn from_slice_with_options<'de, T: Deserialize<'de>>(
     input: &'de [u8],
@@ -86,12 +89,14 @@ pub fn from_slice_with_options<'de, T: Deserialize<'de>>(
     deserializer.end()?;
     Ok(value)
 }
+
 /// Serializes `value` as CBOR into a newly allocated byte vector.
 pub fn to_vec<T: Serialize + ?Sized>(value: &T) -> Result<Vec<u8>> {
     let mut output = Vec::with_capacity(INITIAL_OUTPUT_CAPACITY);
     to_vec_into(value, &mut output)?;
     Ok(output)
 }
+
 /// Serializes in packed form, replacing struct field and enum variant names
 /// with their zero-based declaration indices.
 pub fn to_vec_packed<T: Serialize + ?Sized>(value: &T) -> Result<Vec<u8>> {
@@ -103,6 +108,7 @@ pub fn to_vec_packed<T: Serialize + ?Sized>(value: &T) -> Result<Vec<u8>> {
         .map_err(EncodeError::into_public)?;
     Ok(output)
 }
+
 /// Encodes into `output`, clearing its contents while retaining its allocation.
 ///
 /// On failure, `output` is empty and can be reused for another encoding.
@@ -114,12 +120,14 @@ pub fn to_vec_into<T: Serialize + ?Sized>(value: &T, output: &mut Vec<u8>) -> Re
     }
     Ok(())
 }
+
 /// Deterministically serializes `value` into a new byte vector.
 pub fn to_vec_deterministic<T: Serialize + ?Sized>(value: &T) -> Result<Vec<u8>> {
     let mut output = Vec::new();
     to_vec_deterministic_into(value, &mut output)?;
     Ok(output)
 }
+
 /// Deterministically encodes into `output`, retaining its allocation for reuse.
 ///
 /// The previous contents are cleared first. On failure, `output` is empty.
@@ -173,8 +181,10 @@ fn to_vec_deterministic_impl<T: Serialize + ?Sized>(
         output.clear();
         return Err(error.into_public());
     }
+
     Ok(())
 }
+
 /// Serializes `value` into `output`, returning the initialized prefix.
 ///
 /// Returns [`ErrorKind::OutputTooSmall`] if the slice lacks capacity.
@@ -219,6 +229,7 @@ pub struct EncodeConfig {
     deterministic: bool,
     packed: bool,
 }
+
 impl EncodeConfig {
     /// Creates a serializer using ordinary CBOR encoding.
     pub const fn new() -> Self {
@@ -227,6 +238,7 @@ impl EncodeConfig {
             packed: false,
         }
     }
+
     /// Creates a serializer using deterministic CBOR encoding.
     pub const fn deterministic() -> Self {
         Self {
@@ -234,6 +246,7 @@ impl EncodeConfig {
             packed: false,
         }
     }
+
     /// Creates a serializer using packed field and variant indices.
     pub const fn packed() -> Self {
         Self {
@@ -241,6 +254,7 @@ impl EncodeConfig {
             packed: true,
         }
     }
+
     /// Serializes `value` into a newly allocated byte vector.
     pub fn serialize<T: Serialize + ?Sized>(&self, value: &T) -> Result<Vec<u8>> {
         if self.packed {
@@ -251,6 +265,7 @@ impl EncodeConfig {
             to_vec(value)
         }
     }
+
     /// Encodes into `output`, retaining its allocation for subsequent calls.
     pub fn serialize_into<T: Serialize + ?Sized>(
         &self,
@@ -271,6 +286,7 @@ impl EncodeConfig {
         }
     }
 }
+
 impl Default for EncodeConfig {
     fn default() -> Self {
         Self::new()
@@ -521,69 +537,91 @@ impl<'a, O: EncodeSink + ?Sized> ser::Serializer for RawCborSerializer<'a, O> {
     type SerializeMap = ser::Impossible<(), EncodeError>;
     type SerializeStruct = ser::Impossible<(), EncodeError>;
     type SerializeStructVariant = ser::Impossible<(), EncodeError>;
+
     fn serialize_bytes(self, value: &[u8]) -> EncodeResult<()> {
         self.output.write(value)
     }
+
     fn serialize_bool(self, _: bool) -> EncodeResult<()> {
         Err(EncodeError::Message)
     }
+
     fn serialize_i8(self, _: i8) -> EncodeResult<()> {
         Err(EncodeError::Message)
     }
+
     fn serialize_i16(self, _: i16) -> EncodeResult<()> {
         Err(EncodeError::Message)
     }
+
     fn serialize_i32(self, _: i32) -> EncodeResult<()> {
         Err(EncodeError::Message)
     }
+
     fn serialize_i64(self, _: i64) -> EncodeResult<()> {
         Err(EncodeError::Message)
     }
+
     fn serialize_i128(self, _: i128) -> EncodeResult<()> {
         Err(EncodeError::Message)
     }
+
     fn serialize_u8(self, _: u8) -> EncodeResult<()> {
         Err(EncodeError::Message)
     }
+
     fn serialize_u16(self, _: u16) -> EncodeResult<()> {
         Err(EncodeError::Message)
     }
+
     fn serialize_u32(self, _: u32) -> EncodeResult<()> {
         Err(EncodeError::Message)
     }
+
     fn serialize_u64(self, _: u64) -> EncodeResult<()> {
         Err(EncodeError::Message)
     }
+
     fn serialize_u128(self, _: u128) -> EncodeResult<()> {
         Err(EncodeError::Message)
     }
+
     fn serialize_f32(self, _: f32) -> EncodeResult<()> {
         Err(EncodeError::Message)
     }
+
     fn serialize_f64(self, _: f64) -> EncodeResult<()> {
         Err(EncodeError::Message)
     }
+
     fn serialize_char(self, _: char) -> EncodeResult<()> {
         Err(EncodeError::Message)
     }
+
     fn serialize_str(self, _: &str) -> EncodeResult<()> {
         Err(EncodeError::Message)
     }
+
     fn serialize_none(self) -> EncodeResult<()> {
         Err(EncodeError::Message)
     }
+
     fn serialize_some<T: Serialize + ?Sized>(self, _: &T) -> EncodeResult<()> {
         Err(EncodeError::Message)
     }
+
     fn serialize_unit(self) -> EncodeResult<()> {
         Err(EncodeError::Message)
     }
+
     fn serialize_unit_struct(self, _: &'static str) -> EncodeResult<()> {
         Err(EncodeError::Message)
     }
+
     fn serialize_unit_variant(self, _: &'static str, _: u32, _: &'static str) -> EncodeResult<()> {
         Err(EncodeError::Message)
     }
+
     fn serialize_newtype_struct<T: Serialize + ?Sized>(
         self,
         _: &'static str,
@@ -591,6 +629,7 @@ impl<'a, O: EncodeSink + ?Sized> ser::Serializer for RawCborSerializer<'a, O> {
     ) -> EncodeResult<()> {
         Err(EncodeError::Message)
     }
+
     fn serialize_newtype_variant<T: Serialize + ?Sized>(
         self,
         _: &'static str,
@@ -600,12 +639,15 @@ impl<'a, O: EncodeSink + ?Sized> ser::Serializer for RawCborSerializer<'a, O> {
     ) -> EncodeResult<()> {
         Err(EncodeError::Message)
     }
+
     fn serialize_seq(self, _: Option<usize>) -> EncodeResult<Self::SerializeSeq> {
         Err(EncodeError::Message)
     }
+
     fn serialize_tuple(self, _: usize) -> EncodeResult<Self::SerializeTuple> {
         Err(EncodeError::Message)
     }
+
     fn serialize_tuple_struct(
         self,
         _: &'static str,
@@ -613,6 +655,7 @@ impl<'a, O: EncodeSink + ?Sized> ser::Serializer for RawCborSerializer<'a, O> {
     ) -> EncodeResult<Self::SerializeTupleStruct> {
         Err(EncodeError::Message)
     }
+
     fn serialize_tuple_variant(
         self,
         _: &'static str,
@@ -622,12 +665,15 @@ impl<'a, O: EncodeSink + ?Sized> ser::Serializer for RawCborSerializer<'a, O> {
     ) -> EncodeResult<Self::SerializeTupleVariant> {
         Err(EncodeError::Message)
     }
+
     fn serialize_map(self, _: Option<usize>) -> EncodeResult<Self::SerializeMap> {
         Err(EncodeError::Message)
     }
+
     fn serialize_struct(self, _: &'static str, _: usize) -> EncodeResult<Self::SerializeStruct> {
         Err(EncodeError::Message)
     }
+
     fn serialize_struct_variant(
         self,
         _: &'static str,
@@ -796,19 +842,24 @@ impl<'a, O: EncodeSink + ?Sized> ser::Serializer for StreamingSerializer<'a, O> 
     fn serialize_bool(self, value: bool) -> EncodeResult<()> {
         self.output.push(if value { 0xf5 } else { 0xf4 })
     }
+
     fn serialize_i8(self, value: i8) -> EncodeResult<()> {
         write_signed(self.output, value as i64)
     }
+
     fn serialize_i16(self, value: i16) -> EncodeResult<()> {
         write_signed(self.output, value as i64)
     }
+
     #[inline(always)]
     fn serialize_i32(self, value: i32) -> EncodeResult<()> {
         write_signed(self.output, value as i64)
     }
+
     fn serialize_i64(self, value: i64) -> EncodeResult<()> {
         write_signed(self.output, value)
     }
+
     fn serialize_i128(self, value: i128) -> EncodeResult<()> {
         if value >= 0 {
             if let Ok(value) = u64::try_from(value) {
@@ -826,22 +877,27 @@ impl<'a, O: EncodeSink + ?Sized> ser::Serializer for StreamingSerializer<'a, O> 
         }
         Ok(())
     }
+
     #[inline(always)]
     fn serialize_u8(self, value: u8) -> EncodeResult<()> {
         self.serialize_u64(value as u64)
     }
+
     #[inline(always)]
     fn serialize_u16(self, value: u16) -> EncodeResult<()> {
         self.serialize_u64(value as u64)
     }
+
     #[inline(always)]
     fn serialize_u32(self, value: u32) -> EncodeResult<()> {
         self.serialize_u64(value as u64)
     }
+
     #[inline(always)]
     fn serialize_u64(self, value: u64) -> EncodeResult<()> {
         write_unsigned(self.output, value)
     }
+
     fn serialize_u128(self, value: u128) -> EncodeResult<()> {
         if let Ok(value) = u64::try_from(value) {
             write_head(self.output, 0, value)?;
@@ -851,35 +907,45 @@ impl<'a, O: EncodeSink + ?Sized> ser::Serializer for StreamingSerializer<'a, O> 
         }
         Ok(())
     }
+
     #[inline(always)]
     fn serialize_f32(self, value: f32) -> EncodeResult<()> {
         write_f32(self.output, value)
     }
+
     #[inline(always)]
     fn serialize_f64(self, value: f64) -> EncodeResult<()> {
         write_f64(self.output, value)
     }
+
     fn serialize_char(self, value: char) -> EncodeResult<()> {
         write_text(self.output, value.encode_utf8(&mut [0; 4]))
     }
+
     fn serialize_str(self, value: &str) -> EncodeResult<()> {
         write_text(self.output, value)
     }
+
     fn serialize_bytes(self, value: &[u8]) -> EncodeResult<()> {
         write_bytes(self.output, value)
     }
+
     fn serialize_none(self) -> EncodeResult<()> {
         self.output.push(0xf6)
     }
+
     fn serialize_some<T: Serialize + ?Sized>(self, value: &T) -> EncodeResult<()> {
         value.serialize(self)
     }
+
     fn serialize_unit(self) -> EncodeResult<()> {
         self.output.push(0xf6)
     }
+
     fn serialize_unit_struct(self, _: &'static str) -> EncodeResult<()> {
         self.serialize_unit()
     }
+
     fn serialize_unit_variant(
         self,
         _: &'static str,
@@ -888,6 +954,7 @@ impl<'a, O: EncodeSink + ?Sized> ser::Serializer for StreamingSerializer<'a, O> 
     ) -> EncodeResult<()> {
         write_text(self.output, variant)
     }
+
     fn serialize_newtype_struct<T: Serialize + ?Sized>(
         self,
         name: &'static str,
@@ -900,6 +967,7 @@ impl<'a, O: EncodeSink + ?Sized> ser::Serializer for StreamingSerializer<'a, O> 
         }
         value.serialize(self)
     }
+
     fn serialize_newtype_variant<T: Serialize + ?Sized>(
         self,
         _: &'static str,
@@ -911,12 +979,15 @@ impl<'a, O: EncodeSink + ?Sized> ser::Serializer for StreamingSerializer<'a, O> 
         write_text(self.output, variant)?;
         value.serialize(self)
     }
+
     fn serialize_seq(self, len: Option<usize>) -> EncodeResult<Self::SerializeSeq> {
         StreamingCompound::new(self.output, CompoundKind::Sequence, len)
     }
+
     fn serialize_tuple(self, len: usize) -> EncodeResult<Self::SerializeTuple> {
         self.serialize_seq(Some(len))
     }
+
     fn serialize_tuple_struct(
         self,
         _: &'static str,
@@ -924,6 +995,7 @@ impl<'a, O: EncodeSink + ?Sized> ser::Serializer for StreamingSerializer<'a, O> 
     ) -> EncodeResult<Self::SerializeTupleStruct> {
         self.serialize_seq(Some(len))
     }
+
     fn serialize_tuple_variant(
         self,
         _: &'static str,
@@ -935,12 +1007,15 @@ impl<'a, O: EncodeSink + ?Sized> ser::Serializer for StreamingSerializer<'a, O> 
         write_text(self.output, variant)?;
         StreamingCompound::new(self.output, CompoundKind::Sequence, Some(len))
     }
+
     fn serialize_map(self, len: Option<usize>) -> EncodeResult<Self::SerializeMap> {
         StreamingCompound::new(self.output, CompoundKind::Map, len)
     }
+
     fn serialize_struct(self, _: &'static str, len: usize) -> EncodeResult<Self::SerializeStruct> {
         self.serialize_map(Some(len))
     }
+
     fn serialize_struct_variant(
         self,
         _: &'static str,
@@ -952,6 +1027,7 @@ impl<'a, O: EncodeSink + ?Sized> ser::Serializer for StreamingSerializer<'a, O> 
         write_text(self.output, variant)?;
         StreamingCompound::new(self.output, CompoundKind::Map, Some(len))
     }
+
     fn collect_str<T: core::fmt::Display + ?Sized>(self, value: &T) -> EncodeResult<()> {
         write_text(self.output, &alloc::format!("{value}"))
     }
@@ -998,24 +1074,31 @@ impl<'a, O: EncodeSink + ?Sized> ser::Serializer for PackedSerializer<'a, O> {
         serialize_u32(u32), serialize_u64(u64), serialize_u128(u128), serialize_f32(f32),
         serialize_f64(f64), serialize_char(char)
     }
+
     fn serialize_str(self, value: &str) -> EncodeResult<()> {
         write_text(self.output, value)
     }
+
     fn serialize_bytes(self, value: &[u8]) -> EncodeResult<()> {
         write_bytes(self.output, value)
     }
+
     fn serialize_none(self) -> EncodeResult<()> {
         self.output.push(0xf6)
     }
+
     fn serialize_some<T: Serialize + ?Sized>(self, value: &T) -> EncodeResult<()> {
         value.serialize(self)
     }
+
     fn serialize_unit(self) -> EncodeResult<()> {
         self.output.push(0xf6)
     }
+
     fn serialize_unit_struct(self, _: &'static str) -> EncodeResult<()> {
         self.serialize_unit()
     }
+
     fn serialize_unit_variant(
         self,
         _: &'static str,
@@ -1024,6 +1107,7 @@ impl<'a, O: EncodeSink + ?Sized> ser::Serializer for PackedSerializer<'a, O> {
     ) -> EncodeResult<()> {
         self.serialize_u32(index)
     }
+
     fn serialize_newtype_struct<T: Serialize + ?Sized>(
         self,
         name: &'static str,
@@ -1037,6 +1121,7 @@ impl<'a, O: EncodeSink + ?Sized> ser::Serializer for PackedSerializer<'a, O> {
             value.serialize(self)
         }
     }
+
     fn serialize_newtype_variant<T: Serialize + ?Sized>(
         self,
         _: &'static str,
@@ -1048,12 +1133,15 @@ impl<'a, O: EncodeSink + ?Sized> ser::Serializer for PackedSerializer<'a, O> {
         write_text(self.output, variant)?;
         value.serialize(self)
     }
+
     fn serialize_seq(self, len: Option<usize>) -> EncodeResult<Self::SerializeSeq> {
         StreamingCompound::new_packed(self.output, CompoundKind::Sequence, len)
     }
+
     fn serialize_tuple(self, len: usize) -> EncodeResult<Self::SerializeTuple> {
         self.serialize_seq(Some(len))
     }
+
     fn serialize_tuple_struct(
         self,
         _: &'static str,
@@ -1061,6 +1149,7 @@ impl<'a, O: EncodeSink + ?Sized> ser::Serializer for PackedSerializer<'a, O> {
     ) -> EncodeResult<Self::SerializeTupleStruct> {
         self.serialize_seq(Some(len))
     }
+
     fn serialize_tuple_variant(
         self,
         _: &'static str,
@@ -1072,15 +1161,18 @@ impl<'a, O: EncodeSink + ?Sized> ser::Serializer for PackedSerializer<'a, O> {
         write_text(self.output, variant)?;
         StreamingCompound::new_packed(self.output, CompoundKind::Sequence, Some(len))
     }
+
     fn serialize_map(self, len: Option<usize>) -> EncodeResult<Self::SerializeMap> {
         StreamingCompound::new_packed(self.output, CompoundKind::Map, len)
     }
+
     fn serialize_struct(self, _: &'static str, len: usize) -> EncodeResult<Self::SerializeStruct> {
         Ok(PackedCompound {
             inner: StreamingCompound::new_packed(self.output, CompoundKind::Map, Some(len))?,
             field: 0,
         })
     }
+
     fn serialize_struct_variant(
         self,
         _: &'static str,
@@ -1095,6 +1187,7 @@ impl<'a, O: EncodeSink + ?Sized> ser::Serializer for PackedSerializer<'a, O> {
             field: 0,
         })
     }
+
     fn collect_str<T: core::fmt::Display + ?Sized>(self, value: &T) -> EncodeResult<()> {
         write_text(self.output, &alloc::format!("{value}"))
     }
@@ -1103,6 +1196,7 @@ impl<'a, O: EncodeSink + ?Sized> ser::Serializer for PackedSerializer<'a, O> {
 impl<O: EncodeSink + ?Sized> ser::SerializeStruct for PackedCompound<'_, O> {
     type Ok = ();
     type Error = EncodeError;
+
     fn serialize_field<T: Serialize + ?Sized>(
         &mut self,
         _: &'static str,
@@ -1115,10 +1209,12 @@ impl<O: EncodeSink + ?Sized> ser::SerializeStruct for PackedCompound<'_, O> {
             output: self.inner.target(),
         })
     }
+
     fn skip_field(&mut self, _: &'static str) -> EncodeResult<()> {
         self.field += 1;
         Ok(())
     }
+
     fn end(self) -> EncodeResult<()> {
         self.inner.finish()
     }
@@ -1127,6 +1223,7 @@ impl<O: EncodeSink + ?Sized> ser::SerializeStruct for PackedCompound<'_, O> {
 impl<O: EncodeSink + ?Sized> ser::SerializeStructVariant for PackedCompound<'_, O> {
     type Ok = ();
     type Error = EncodeError;
+
     fn serialize_field<T: Serialize + ?Sized>(
         &mut self,
         key: &'static str,
@@ -1134,9 +1231,11 @@ impl<O: EncodeSink + ?Sized> ser::SerializeStructVariant for PackedCompound<'_, 
     ) -> EncodeResult<()> {
         ser::SerializeStruct::serialize_field(self, key, value)
     }
+
     fn skip_field(&mut self, key: &'static str) -> EncodeResult<()> {
         ser::SerializeStruct::skip_field(self, key)
     }
+
     fn end(self) -> EncodeResult<()> {
         self.inner.finish()
     }
@@ -1166,126 +1265,147 @@ impl<'a, W: crate::Output> ser::Serializer for &'a mut Serializer<W> {
         }
         .serialize_bool(v)
     }
+
     fn serialize_i8(self, v: i8) -> EncodeResult<()> {
         StreamingSerializer {
             output: &mut self.output,
         }
         .serialize_i8(v)
     }
+
     fn serialize_i16(self, v: i16) -> EncodeResult<()> {
         StreamingSerializer {
             output: &mut self.output,
         }
         .serialize_i16(v)
     }
+
     fn serialize_i32(self, v: i32) -> EncodeResult<()> {
         StreamingSerializer {
             output: &mut self.output,
         }
         .serialize_i32(v)
     }
+
     fn serialize_i64(self, v: i64) -> EncodeResult<()> {
         StreamingSerializer {
             output: &mut self.output,
         }
         .serialize_i64(v)
     }
+
     fn serialize_i128(self, v: i128) -> EncodeResult<()> {
         StreamingSerializer {
             output: &mut self.output,
         }
         .serialize_i128(v)
     }
+
     fn serialize_u8(self, v: u8) -> EncodeResult<()> {
         StreamingSerializer {
             output: &mut self.output,
         }
         .serialize_u8(v)
     }
+
     fn serialize_u16(self, v: u16) -> EncodeResult<()> {
         StreamingSerializer {
             output: &mut self.output,
         }
         .serialize_u16(v)
     }
+
     fn serialize_u32(self, v: u32) -> EncodeResult<()> {
         StreamingSerializer {
             output: &mut self.output,
         }
         .serialize_u32(v)
     }
+
     fn serialize_u64(self, v: u64) -> EncodeResult<()> {
         StreamingSerializer {
             output: &mut self.output,
         }
         .serialize_u64(v)
     }
+
     fn serialize_u128(self, v: u128) -> EncodeResult<()> {
         StreamingSerializer {
             output: &mut self.output,
         }
         .serialize_u128(v)
     }
+
     fn serialize_f32(self, v: f32) -> EncodeResult<()> {
         StreamingSerializer {
             output: &mut self.output,
         }
         .serialize_f32(v)
     }
+
     fn serialize_f64(self, v: f64) -> EncodeResult<()> {
         StreamingSerializer {
             output: &mut self.output,
         }
         .serialize_f64(v)
     }
+
     fn serialize_char(self, v: char) -> EncodeResult<()> {
         StreamingSerializer {
             output: &mut self.output,
         }
         .serialize_char(v)
     }
+
     fn serialize_str(self, v: &str) -> EncodeResult<()> {
         StreamingSerializer {
             output: &mut self.output,
         }
         .serialize_str(v)
     }
+
     fn serialize_bytes(self, v: &[u8]) -> EncodeResult<()> {
         StreamingSerializer {
             output: &mut self.output,
         }
         .serialize_bytes(v)
     }
+
     fn serialize_none(self) -> EncodeResult<()> {
         StreamingSerializer {
             output: &mut self.output,
         }
         .serialize_none()
     }
+
     fn serialize_some<T: Serialize + ?Sized>(self, v: &T) -> EncodeResult<()> {
         StreamingSerializer {
             output: &mut self.output,
         }
         .serialize_some(v)
     }
+
     fn serialize_unit(self) -> EncodeResult<()> {
         StreamingSerializer {
             output: &mut self.output,
         }
         .serialize_unit()
     }
+
     fn serialize_unit_struct(self, n: &'static str) -> EncodeResult<()> {
         StreamingSerializer {
             output: &mut self.output,
         }
         .serialize_unit_struct(n)
     }
+
     fn serialize_unit_variant(self, n: &'static str, i: u32, v: &'static str) -> EncodeResult<()> {
         StreamingSerializer {
             output: &mut self.output,
         }
         .serialize_unit_variant(n, i, v)
     }
+
     fn serialize_newtype_struct<T: Serialize + ?Sized>(
         self,
         n: &'static str,
@@ -1296,6 +1416,7 @@ impl<'a, W: crate::Output> ser::Serializer for &'a mut Serializer<W> {
         }
         .serialize_newtype_struct(n, v)
     }
+
     fn serialize_newtype_variant<T: Serialize + ?Sized>(
         self,
         n: &'static str,
@@ -1308,18 +1429,21 @@ impl<'a, W: crate::Output> ser::Serializer for &'a mut Serializer<W> {
         }
         .serialize_newtype_variant(n, i, variant, v)
     }
+
     fn serialize_seq(self, len: Option<usize>) -> EncodeResult<Self::SerializeSeq> {
         StreamingSerializer {
             output: &mut self.output,
         }
         .serialize_seq(len)
     }
+
     fn serialize_tuple(self, len: usize) -> EncodeResult<Self::SerializeTuple> {
         StreamingSerializer {
             output: &mut self.output,
         }
         .serialize_tuple(len)
     }
+
     fn serialize_tuple_struct(
         self,
         n: &'static str,
@@ -1330,6 +1454,7 @@ impl<'a, W: crate::Output> ser::Serializer for &'a mut Serializer<W> {
         }
         .serialize_tuple_struct(n, len)
     }
+
     fn serialize_tuple_variant(
         self,
         n: &'static str,
@@ -1342,18 +1467,21 @@ impl<'a, W: crate::Output> ser::Serializer for &'a mut Serializer<W> {
         }
         .serialize_tuple_variant(n, i, v, len)
     }
+
     fn serialize_map(self, len: Option<usize>) -> EncodeResult<Self::SerializeMap> {
         StreamingSerializer {
             output: &mut self.output,
         }
         .serialize_map(len)
     }
+
     fn serialize_struct(self, n: &'static str, len: usize) -> EncodeResult<Self::SerializeStruct> {
         StreamingSerializer {
             output: &mut self.output,
         }
         .serialize_struct(n, len)
     }
+
     fn serialize_struct_variant(
         self,
         n: &'static str,
@@ -1366,6 +1494,7 @@ impl<'a, W: crate::Output> ser::Serializer for &'a mut Serializer<W> {
         }
         .serialize_struct_variant(n, i, v, len)
     }
+
     fn collect_str<T: core::fmt::Display + ?Sized>(self, v: &T) -> EncodeResult<()> {
         StreamingSerializer {
             output: &mut self.output,
@@ -1436,60 +1565,77 @@ impl<'a, O: EncodeSink + ?Sized> StreamingCompound<'a, O> {
 impl<O: EncodeSink + ?Sized> ser::SerializeSeq for StreamingCompound<'_, O> {
     type Ok = ();
     type Error = EncodeError;
+
     #[inline(always)]
     fn serialize_element<T: Serialize + ?Sized>(&mut self, value: &T) -> EncodeResult<()> {
         self.serialize(value)
     }
+
     fn end(self) -> EncodeResult<()> {
         self.finish()
     }
 }
+
 impl<O: EncodeSink + ?Sized> ser::SerializeTuple for StreamingCompound<'_, O> {
     type Ok = ();
     type Error = EncodeError;
+
     fn serialize_element<T: Serialize + ?Sized>(&mut self, value: &T) -> EncodeResult<()> {
         ser::SerializeSeq::serialize_element(self, value)
     }
+
     fn end(self) -> EncodeResult<()> {
         self.finish()
     }
 }
+
 impl<O: EncodeSink + ?Sized> ser::SerializeTupleStruct for StreamingCompound<'_, O> {
     type Ok = ();
     type Error = EncodeError;
+
     fn serialize_field<T: Serialize + ?Sized>(&mut self, value: &T) -> EncodeResult<()> {
         ser::SerializeSeq::serialize_element(self, value)
     }
+
     fn end(self) -> EncodeResult<()> {
         self.finish()
     }
 }
+
 impl<O: EncodeSink + ?Sized> ser::SerializeTupleVariant for StreamingCompound<'_, O> {
     type Ok = ();
     type Error = EncodeError;
+
     fn serialize_field<T: Serialize + ?Sized>(&mut self, value: &T) -> EncodeResult<()> {
         ser::SerializeSeq::serialize_element(self, value)
     }
+
     fn end(self) -> EncodeResult<()> {
         self.finish()
     }
 }
+
 impl<O: EncodeSink + ?Sized> ser::SerializeMap for StreamingCompound<'_, O> {
     type Ok = ();
     type Error = EncodeError;
+
     fn serialize_key<T: Serialize + ?Sized>(&mut self, key: &T) -> EncodeResult<()> {
         self.serialize(key)
     }
+
     fn serialize_value<T: Serialize + ?Sized>(&mut self, value: &T) -> EncodeResult<()> {
         self.serialize(value)
     }
+
     fn end(self) -> EncodeResult<()> {
         self.finish()
     }
 }
+
 impl<O: EncodeSink + ?Sized> ser::SerializeStruct for StreamingCompound<'_, O> {
     type Ok = ();
     type Error = EncodeError;
+
     fn serialize_field<T: Serialize + ?Sized>(
         &mut self,
         key: &'static str,
@@ -1498,13 +1644,16 @@ impl<O: EncodeSink + ?Sized> ser::SerializeStruct for StreamingCompound<'_, O> {
         self.serialize(key)?;
         self.serialize(value)
     }
+
     fn end(self) -> EncodeResult<()> {
         self.finish()
     }
 }
+
 impl<O: EncodeSink + ?Sized> ser::SerializeStructVariant for StreamingCompound<'_, O> {
     type Ok = ();
     type Error = EncodeError;
+
     fn serialize_field<T: Serialize + ?Sized>(
         &mut self,
         key: &'static str,
@@ -1512,6 +1661,7 @@ impl<O: EncodeSink + ?Sized> ser::SerializeStructVariant for StreamingCompound<'
     ) -> EncodeResult<()> {
         ser::SerializeStruct::serialize_field(self, key, value)
     }
+
     fn end(self) -> EncodeResult<()> {
         self.finish()
     }
@@ -1544,63 +1694,83 @@ impl<'a> ser::Serializer for DeterministicSerializer<'a> {
     fn serialize_bool(self, value: bool) -> EncodeResult<()> {
         ser::Serializer::serialize_bool(self.streaming(), value)
     }
+
     fn serialize_i8(self, value: i8) -> EncodeResult<()> {
         ser::Serializer::serialize_i8(self.streaming(), value)
     }
+
     fn serialize_i16(self, value: i16) -> EncodeResult<()> {
         ser::Serializer::serialize_i16(self.streaming(), value)
     }
+
     fn serialize_i32(self, value: i32) -> EncodeResult<()> {
         ser::Serializer::serialize_i32(self.streaming(), value)
     }
+
     fn serialize_i64(self, value: i64) -> EncodeResult<()> {
         ser::Serializer::serialize_i64(self.streaming(), value)
     }
+
     fn serialize_i128(self, value: i128) -> EncodeResult<()> {
         ser::Serializer::serialize_i128(self.streaming(), value)
     }
+
     fn serialize_u8(self, value: u8) -> EncodeResult<()> {
         ser::Serializer::serialize_u8(self.streaming(), value)
     }
+
     fn serialize_u16(self, value: u16) -> EncodeResult<()> {
         ser::Serializer::serialize_u16(self.streaming(), value)
     }
+
     fn serialize_u32(self, value: u32) -> EncodeResult<()> {
         ser::Serializer::serialize_u32(self.streaming(), value)
     }
+
     fn serialize_u64(self, value: u64) -> EncodeResult<()> {
         ser::Serializer::serialize_u64(self.streaming(), value)
     }
+
     fn serialize_u128(self, value: u128) -> EncodeResult<()> {
         ser::Serializer::serialize_u128(self.streaming(), value)
     }
+
     fn serialize_f32(self, value: f32) -> EncodeResult<()> {
         write_float_preferred(self.output, value as f64)
     }
+
     fn serialize_f64(self, value: f64) -> EncodeResult<()> {
         write_float_preferred(self.output, value)
     }
+
     fn serialize_char(self, value: char) -> EncodeResult<()> {
         ser::Serializer::serialize_char(self.streaming(), value)
     }
+
     fn serialize_str(self, value: &str) -> EncodeResult<()> {
         ser::Serializer::serialize_str(self.streaming(), value)
     }
+
     fn serialize_bytes(self, value: &[u8]) -> EncodeResult<()> {
         ser::Serializer::serialize_bytes(self.streaming(), value)
     }
+
     fn serialize_none(self) -> EncodeResult<()> {
         ser::Serializer::serialize_none(self.streaming())
     }
+
     fn serialize_some<T: Serialize + ?Sized>(self, value: &T) -> EncodeResult<()> {
         value.serialize(self)
     }
+
     fn serialize_unit(self) -> EncodeResult<()> {
         ser::Serializer::serialize_unit(self.streaming())
     }
+
     fn serialize_unit_struct(self, name: &'static str) -> EncodeResult<()> {
         ser::Serializer::serialize_unit_struct(self.streaming(), name)
     }
+
     fn serialize_unit_variant(
         self,
         name: &'static str,
@@ -1609,6 +1779,7 @@ impl<'a> ser::Serializer for DeterministicSerializer<'a> {
     ) -> EncodeResult<()> {
         ser::Serializer::serialize_unit_variant(self.streaming(), name, index, variant)
     }
+
     fn serialize_newtype_struct<T: Serialize + ?Sized>(
         self,
         name: &'static str,
@@ -1621,6 +1792,7 @@ impl<'a> ser::Serializer for DeterministicSerializer<'a> {
         }
         value.serialize(self)
     }
+
     fn serialize_newtype_variant<T: Serialize + ?Sized>(
         self,
         _: &'static str,
@@ -1632,12 +1804,15 @@ impl<'a> ser::Serializer for DeterministicSerializer<'a> {
         push_text(self.output, variant);
         value.serialize(self)
     }
+
     fn serialize_seq(self, len: Option<usize>) -> EncodeResult<Self::SerializeSeq> {
         DeterministicCompound::sequence(self.output, len)
     }
+
     fn serialize_tuple(self, len: usize) -> EncodeResult<Self::SerializeTuple> {
         self.serialize_seq(Some(len))
     }
+
     fn serialize_tuple_struct(
         self,
         _: &'static str,
@@ -1645,6 +1820,7 @@ impl<'a> ser::Serializer for DeterministicSerializer<'a> {
     ) -> EncodeResult<Self::SerializeTupleStruct> {
         self.serialize_seq(Some(len))
     }
+
     fn serialize_tuple_variant(
         self,
         _: &'static str,
@@ -1656,12 +1832,15 @@ impl<'a> ser::Serializer for DeterministicSerializer<'a> {
         push_text(self.output, variant);
         DeterministicCompound::sequence(self.output, Some(len))
     }
+
     fn serialize_map(self, len: Option<usize>) -> EncodeResult<Self::SerializeMap> {
         DeterministicCompound::map(self.output, len, self.scratch)
     }
+
     fn serialize_struct(self, _: &'static str, len: usize) -> EncodeResult<Self::SerializeStruct> {
         DeterministicCompound::map(self.output, Some(len), self.scratch)
     }
+
     fn serialize_struct_variant(
         self,
         _: &'static str,
@@ -1673,6 +1852,7 @@ impl<'a> ser::Serializer for DeterministicSerializer<'a> {
         push_text(self.output, variant);
         DeterministicCompound::map(self.output, Some(len), self.scratch)
     }
+
     fn collect_str<T: core::fmt::Display + ?Sized>(self, value: &T) -> EncodeResult<()> {
         ser::Serializer::collect_str(self.streaming(), value)
     }
@@ -1872,59 +2052,76 @@ impl<'a> DeterministicCompound<'a> {
 impl ser::SerializeSeq for DeterministicCompound<'_> {
     type Ok = ();
     type Error = EncodeError;
+
     fn serialize_element<T: Serialize + ?Sized>(&mut self, value: &T) -> EncodeResult<()> {
         self.serialize_element(value)
     }
+
     fn end(self) -> EncodeResult<()> {
         self.finish()
     }
 }
+
 impl ser::SerializeTuple for DeterministicCompound<'_> {
     type Ok = ();
     type Error = EncodeError;
+
     fn serialize_element<T: Serialize + ?Sized>(&mut self, value: &T) -> EncodeResult<()> {
         self.serialize_element(value)
     }
+
     fn end(self) -> EncodeResult<()> {
         self.finish()
     }
 }
+
 impl ser::SerializeTupleStruct for DeterministicCompound<'_> {
     type Ok = ();
     type Error = EncodeError;
+
     fn serialize_field<T: Serialize + ?Sized>(&mut self, value: &T) -> EncodeResult<()> {
         self.serialize_element(value)
     }
+
     fn end(self) -> EncodeResult<()> {
         self.finish()
     }
 }
+
 impl ser::SerializeTupleVariant for DeterministicCompound<'_> {
     type Ok = ();
     type Error = EncodeError;
+
     fn serialize_field<T: Serialize + ?Sized>(&mut self, value: &T) -> EncodeResult<()> {
         self.serialize_element(value)
     }
+
     fn end(self) -> EncodeResult<()> {
         self.finish()
     }
 }
+
 impl ser::SerializeMap for DeterministicCompound<'_> {
     type Ok = ();
     type Error = EncodeError;
+
     fn serialize_key<T: Serialize + ?Sized>(&mut self, key: &T) -> EncodeResult<()> {
         self.serialize_key(key)
     }
+
     fn serialize_value<T: Serialize + ?Sized>(&mut self, value: &T) -> EncodeResult<()> {
         self.serialize_value(value)
     }
+
     fn end(self) -> EncodeResult<()> {
         self.finish()
     }
 }
+
 impl ser::SerializeStruct for DeterministicCompound<'_> {
     type Ok = ();
     type Error = EncodeError;
+
     fn serialize_field<T: Serialize + ?Sized>(
         &mut self,
         key: &'static str,
@@ -1933,13 +2130,16 @@ impl ser::SerializeStruct for DeterministicCompound<'_> {
         self.serialize_key(key)?;
         self.serialize_value(value)
     }
+
     fn end(self) -> EncodeResult<()> {
         self.finish()
     }
 }
+
 impl ser::SerializeStructVariant for DeterministicCompound<'_> {
     type Ok = ();
     type Error = EncodeError;
+
     fn serialize_field<T: Serialize + ?Sized>(
         &mut self,
         key: &'static str,
@@ -1948,6 +2148,7 @@ impl ser::SerializeStructVariant for DeterministicCompound<'_> {
         self.serialize_key(key)?;
         self.serialize_value(value)
     }
+
     fn end(self) -> EncodeResult<()> {
         self.finish()
     }
@@ -2002,21 +2203,27 @@ impl ser::Serializer for ValueSerializer {
     type SerializeMap = Compound;
     type SerializeStruct = Compound;
     type SerializeStructVariant = Compound;
+
     fn serialize_bool(self, v: bool) -> Result<Value> {
         Ok(Value::Bool(v))
     }
+
     fn serialize_i8(self, v: i8) -> Result<Value> {
         self.serialize_i128(v as i128)
     }
+
     fn serialize_i16(self, v: i16) -> Result<Value> {
         self.serialize_i128(v as i128)
     }
+
     fn serialize_i32(self, v: i32) -> Result<Value> {
         self.serialize_i128(v as i128)
     }
+
     fn serialize_i64(self, v: i64) -> Result<Value> {
         self.serialize_i128(v as i128)
     }
+
     fn serialize_i128(self, v: i128) -> Result<Value> {
         if v >= 0 {
             match u64::try_from(v) {
@@ -2037,18 +2244,23 @@ impl ser::Serializer for ValueSerializer {
             }
         }
     }
+
     fn serialize_u8(self, v: u8) -> Result<Value> {
         Ok(Value::Unsigned(v as u64))
     }
+
     fn serialize_u16(self, v: u16) -> Result<Value> {
         Ok(Value::Unsigned(v as u64))
     }
+
     fn serialize_u32(self, v: u32) -> Result<Value> {
         Ok(Value::Unsigned(v as u64))
     }
+
     fn serialize_u64(self, v: u64) -> Result<Value> {
         Ok(Value::Unsigned(v))
     }
+
     fn serialize_u128(self, v: u128) -> Result<Value> {
         match u64::try_from(v) {
             Ok(value) => Ok(Value::Unsigned(value)),
@@ -2058,36 +2270,47 @@ impl ser::Serializer for ValueSerializer {
             )),
         }
     }
+
     fn serialize_f32(self, v: f32) -> Result<Value> {
         Ok(Value::Float(v as f64))
     }
+
     fn serialize_f64(self, v: f64) -> Result<Value> {
         Ok(Value::Float(v))
     }
+
     fn serialize_char(self, v: char) -> Result<Value> {
         self.serialize_str(v.encode_utf8(&mut [0; 4]))
     }
+
     fn serialize_str(self, v: &str) -> Result<Value> {
         Ok(Value::Text(v.into()))
     }
+
     fn serialize_bytes(self, v: &[u8]) -> Result<Value> {
         Ok(Value::Bytes(v.into()))
     }
+
     fn serialize_none(self) -> Result<Value> {
         Ok(Value::Null)
     }
+
     fn serialize_some<T: Serialize + ?Sized>(self, v: &T) -> Result<Value> {
         v.serialize(self)
     }
+
     fn serialize_unit(self) -> Result<Value> {
         Ok(Value::Null)
     }
+
     fn serialize_unit_struct(self, _: &'static str) -> Result<Value> {
         Ok(Value::Null)
     }
+
     fn serialize_unit_variant(self, _: &'static str, _: u32, v: &'static str) -> Result<Value> {
         Ok(Value::Text(v.into()))
     }
+
     fn serialize_newtype_struct<T: Serialize + ?Sized>(
         self,
         name: &'static str,
@@ -2098,6 +2321,7 @@ impl ser::Serializer for ValueSerializer {
         }
         v.serialize(self)
     }
+
     fn serialize_newtype_variant<T: Serialize + ?Sized>(
         self,
         _: &'static str,
@@ -2110,15 +2334,19 @@ impl ser::Serializer for ValueSerializer {
             v.serialize(self)?,
         )]))
     }
+
     fn serialize_seq(self, len: Option<usize>) -> Result<Compound> {
         Ok(Compound::seq(len))
     }
+
     fn serialize_tuple(self, len: usize) -> Result<Compound> {
         Ok(Compound::seq(Some(len)))
     }
+
     fn serialize_tuple_struct(self, _: &'static str, len: usize) -> Result<Compound> {
         Ok(Compound::seq(Some(len)))
     }
+
     fn serialize_tuple_variant(
         self,
         _: &'static str,
@@ -2128,12 +2356,15 @@ impl ser::Serializer for ValueSerializer {
     ) -> Result<Compound> {
         Ok(Compound::variant(n, len))
     }
+
     fn serialize_map(self, len: Option<usize>) -> Result<Compound> {
         Ok(Compound::map(len))
     }
+
     fn serialize_struct(self, _: &'static str, len: usize) -> Result<Compound> {
         Ok(Compound::map(Some(len)))
     }
+
     fn serialize_struct_variant(
         self,
         _: &'static str,
@@ -2143,6 +2374,7 @@ impl ser::Serializer for ValueSerializer {
     ) -> Result<Compound> {
         Ok(Compound::variant_map(n, len))
     }
+
     fn collect_str<T: core::fmt::Display + ?Sized>(self, value: &T) -> Result<Value> {
         Ok(Value::Text(alloc::format!("{value}")))
     }
@@ -2154,6 +2386,7 @@ fn unsigned_bytes(value: u128) -> Vec<u8> {
     let first = bytes.iter().position(|byte| *byte != 0).unwrap_or(15);
     bytes[first..].to_vec()
 }
+
 #[allow(dead_code)]
 pub(crate) struct Compound {
     values: Vec<Value>,
@@ -2174,69 +2407,91 @@ impl ser::Serializer for RawValueSerializer {
     type SerializeMap = ser::Impossible<Value, Error>;
     type SerializeStruct = ser::Impossible<Value, Error>;
     type SerializeStructVariant = ser::Impossible<Value, Error>;
+
     fn serialize_bytes(self, bytes: &[u8]) -> Result<Value> {
         crate::decode::decode_owned_value(bytes)
     }
+
     fn serialize_bool(self, _: bool) -> Result<Value> {
         Err(Error::new(ErrorKind::Message, 0))
     }
+
     fn serialize_i8(self, _: i8) -> Result<Value> {
         Err(Error::new(ErrorKind::Message, 0))
     }
+
     fn serialize_i16(self, _: i16) -> Result<Value> {
         Err(Error::new(ErrorKind::Message, 0))
     }
+
     fn serialize_i32(self, _: i32) -> Result<Value> {
         Err(Error::new(ErrorKind::Message, 0))
     }
+
     fn serialize_i64(self, _: i64) -> Result<Value> {
         Err(Error::new(ErrorKind::Message, 0))
     }
+
     fn serialize_i128(self, _: i128) -> Result<Value> {
         Err(Error::new(ErrorKind::Message, 0))
     }
+
     fn serialize_u8(self, _: u8) -> Result<Value> {
         Err(Error::new(ErrorKind::Message, 0))
     }
+
     fn serialize_u16(self, _: u16) -> Result<Value> {
         Err(Error::new(ErrorKind::Message, 0))
     }
+
     fn serialize_u32(self, _: u32) -> Result<Value> {
         Err(Error::new(ErrorKind::Message, 0))
     }
+
     fn serialize_u64(self, _: u64) -> Result<Value> {
         Err(Error::new(ErrorKind::Message, 0))
     }
+
     fn serialize_u128(self, _: u128) -> Result<Value> {
         Err(Error::new(ErrorKind::Message, 0))
     }
+
     fn serialize_f32(self, _: f32) -> Result<Value> {
         Err(Error::new(ErrorKind::Message, 0))
     }
+
     fn serialize_f64(self, _: f64) -> Result<Value> {
         Err(Error::new(ErrorKind::Message, 0))
     }
+
     fn serialize_char(self, _: char) -> Result<Value> {
         Err(Error::new(ErrorKind::Message, 0))
     }
+
     fn serialize_str(self, _: &str) -> Result<Value> {
         Err(Error::new(ErrorKind::Message, 0))
     }
+
     fn serialize_none(self) -> Result<Value> {
         Err(Error::new(ErrorKind::Message, 0))
     }
+
     fn serialize_some<T: Serialize + ?Sized>(self, _: &T) -> Result<Value> {
         Err(Error::new(ErrorKind::Message, 0))
     }
+
     fn serialize_unit(self) -> Result<Value> {
         Err(Error::new(ErrorKind::Message, 0))
     }
+
     fn serialize_unit_struct(self, _: &'static str) -> Result<Value> {
         Err(Error::new(ErrorKind::Message, 0))
     }
+
     fn serialize_unit_variant(self, _: &'static str, _: u32, _: &'static str) -> Result<Value> {
         Err(Error::new(ErrorKind::Message, 0))
     }
+
     fn serialize_newtype_struct<T: Serialize + ?Sized>(
         self,
         _: &'static str,
@@ -2244,6 +2499,7 @@ impl ser::Serializer for RawValueSerializer {
     ) -> Result<Value> {
         Err(Error::new(ErrorKind::Message, 0))
     }
+
     fn serialize_newtype_variant<T: Serialize + ?Sized>(
         self,
         _: &'static str,
@@ -2253,12 +2509,15 @@ impl ser::Serializer for RawValueSerializer {
     ) -> Result<Value> {
         Err(Error::new(ErrorKind::Message, 0))
     }
+
     fn serialize_seq(self, _: Option<usize>) -> Result<Self::SerializeSeq> {
         Err(Error::new(ErrorKind::Message, 0))
     }
+
     fn serialize_tuple(self, _: usize) -> Result<Self::SerializeTuple> {
         Err(Error::new(ErrorKind::Message, 0))
     }
+
     fn serialize_tuple_struct(
         self,
         _: &'static str,
@@ -2266,6 +2525,7 @@ impl ser::Serializer for RawValueSerializer {
     ) -> Result<Self::SerializeTupleStruct> {
         Err(Error::new(ErrorKind::Message, 0))
     }
+
     fn serialize_tuple_variant(
         self,
         _: &'static str,
@@ -2275,12 +2535,15 @@ impl ser::Serializer for RawValueSerializer {
     ) -> Result<Self::SerializeTupleVariant> {
         Err(Error::new(ErrorKind::Message, 0))
     }
+
     fn serialize_map(self, _: Option<usize>) -> Result<Self::SerializeMap> {
         Err(Error::new(ErrorKind::Message, 0))
     }
+
     fn serialize_struct(self, _: &'static str, _: usize) -> Result<Self::SerializeStruct> {
         Err(Error::new(ErrorKind::Message, 0))
     }
+
     fn serialize_struct_variant(
         self,
         _: &'static str,
@@ -2291,6 +2554,7 @@ impl ser::Serializer for RawValueSerializer {
         Err(Error::new(ErrorKind::Message, 0))
     }
 }
+
 #[allow(dead_code)]
 impl Compound {
     fn seq(n: Option<usize>) -> Self {
@@ -2302,6 +2566,7 @@ impl Compound {
             map: false,
         }
     }
+
     fn map(n: Option<usize>) -> Self {
         Self {
             values: Vec::new(),
@@ -2311,16 +2576,19 @@ impl Compound {
             map: true,
         }
     }
+
     fn variant(n: &str, len: usize) -> Self {
         let mut x = Self::seq(Some(len));
         x.variant = Some(n.into());
         x
     }
+
     fn variant_map(n: &str, len: usize) -> Self {
         let mut x = Self::map(Some(len));
         x.variant = Some(n.into());
         x
     }
+
     fn end(self) -> Result<Value> {
         let v = if self.map {
             Value::Map(self.entries)
@@ -2334,81 +2602,103 @@ impl Compound {
         })
     }
 }
+
 impl ser::SerializeSeq for Compound {
     type Ok = Value;
     type Error = Error;
+
     fn serialize_element<T: Serialize + ?Sized>(&mut self, v: &T) -> Result<()> {
         self.values.push(v.serialize(ValueSerializer)?);
         Ok(())
     }
+
     fn end(self) -> Result<Value> {
         self.end()
     }
 }
+
 impl ser::SerializeTuple for Compound {
     type Ok = Value;
     type Error = Error;
+
     fn serialize_element<T: Serialize + ?Sized>(&mut self, v: &T) -> Result<()> {
         ser::SerializeSeq::serialize_element(self, v)
     }
+
     fn end(self) -> Result<Value> {
         self.end()
     }
 }
+
 impl ser::SerializeTupleStruct for Compound {
     type Ok = Value;
     type Error = Error;
+
     fn serialize_field<T: Serialize + ?Sized>(&mut self, v: &T) -> Result<()> {
         ser::SerializeSeq::serialize_element(self, v)
     }
+
     fn end(self) -> Result<Value> {
         self.end()
     }
 }
+
 impl ser::SerializeTupleVariant for Compound {
     type Ok = Value;
     type Error = Error;
+
     fn serialize_field<T: Serialize + ?Sized>(&mut self, v: &T) -> Result<()> {
         ser::SerializeSeq::serialize_element(self, v)
     }
+
     fn end(self) -> Result<Value> {
         self.end()
     }
 }
+
 impl ser::SerializeMap for Compound {
     type Ok = Value;
     type Error = Error;
+
     fn serialize_key<T: Serialize + ?Sized>(&mut self, k: &T) -> Result<()> {
         self.key = Some(k.serialize(ValueSerializer)?);
         Ok(())
     }
+
     fn serialize_value<T: Serialize + ?Sized>(&mut self, v: &T) -> Result<()> {
         let k = self.key.take().ok_or(Error::new(ErrorKind::Message, 0))?;
         self.entries.push((k, v.serialize(ValueSerializer)?));
         Ok(())
     }
+
     fn end(self) -> Result<Value> {
         self.end()
     }
 }
+
 impl ser::SerializeStruct for Compound {
     type Ok = Value;
     type Error = Error;
+
     fn serialize_field<T: Serialize + ?Sized>(&mut self, k: &'static str, v: &T) -> Result<()> {
         self.entries
             .push((Value::Text(k.into()), v.serialize(ValueSerializer)?));
         Ok(())
     }
+
     fn end(self) -> Result<Value> {
         self.end()
     }
 }
+
 impl ser::SerializeStructVariant for Compound {
     type Ok = Value;
     type Error = Error;
+
     fn serialize_field<T: Serialize + ?Sized>(&mut self, k: &'static str, v: &T) -> Result<()> {
         ser::SerializeStruct::serialize_field(self, k, v)
     }
+
     fn end(self) -> Result<Value> {
         self.end()
     }
@@ -3286,6 +3576,7 @@ impl<'de> VariantAccess<'de> for DirectVariant<'_, 'de> {
 struct Seq<I>(I);
 impl<'de, I: Iterator<Item = BorrowedValue<'de>>> SeqAccess<'de> for Seq<I> {
     type Error = Error;
+
     fn next_element_seed<T: DeserializeSeed<'de>>(&mut self, s: T) -> Result<Option<T::Value>> {
         self.0.next().map(|v| s.deserialize(v)).transpose()
     }
@@ -3309,6 +3600,7 @@ impl<'de> de::Deserializer<'de> for OwnedBytesDeserializer {
 
 impl<'de> de::Deserializer<'de> for BorrowedValue<'de> {
     type Error = Error;
+
     fn deserialize_any<V: Visitor<'de>>(self, v: V) -> Result<V::Value> {
         match self {
             Self::Unsigned(x) => v.visit_u64(x),
@@ -3333,6 +3625,7 @@ impl<'de> de::Deserializer<'de> for BorrowedValue<'de> {
             Self::Simple(x) => v.visit_u8(x),
         }
     }
+
     fn deserialize_option<V: Visitor<'de>>(self, v: V) -> Result<V::Value> {
         if matches!(self, Self::Null | Self::Undefined) {
             v.visit_none()
@@ -3340,32 +3633,39 @@ impl<'de> de::Deserializer<'de> for BorrowedValue<'de> {
             v.visit_some(self)
         }
     }
+
     fn deserialize_i8<V: Visitor<'de>>(self, v: V) -> Result<V::Value> {
         v.visit_i8(
             i8::try_from(as_i128(self)?).map_err(|_| Error::new(ErrorKind::IntegerOverflow, 0))?,
         )
     }
+
     fn deserialize_i16<V: Visitor<'de>>(self, v: V) -> Result<V::Value> {
         v.visit_i16(
             i16::try_from(as_i128(self)?).map_err(|_| Error::new(ErrorKind::IntegerOverflow, 0))?,
         )
     }
+
     fn deserialize_i32<V: Visitor<'de>>(self, v: V) -> Result<V::Value> {
         v.visit_i32(
             i32::try_from(as_i128(self)?).map_err(|_| Error::new(ErrorKind::IntegerOverflow, 0))?,
         )
     }
+
     fn deserialize_i64<V: Visitor<'de>>(self, v: V) -> Result<V::Value> {
         v.visit_i64(
             i64::try_from(as_i128(self)?).map_err(|_| Error::new(ErrorKind::IntegerOverflow, 0))?,
         )
     }
+
     fn deserialize_i128<V: Visitor<'de>>(self, v: V) -> Result<V::Value> {
         v.visit_i128(as_i128(self)?)
     }
+
     fn deserialize_u128<V: Visitor<'de>>(self, v: V) -> Result<V::Value> {
         v.visit_u128(as_u128(self)?)
     }
+
     fn deserialize_enum<V: Visitor<'de>>(self, _: &str, _: &[&str], v: V) -> Result<V::Value> {
         match self {
             Self::Text(s) => v.visit_enum(s.into_owned().into_deserializer()),
@@ -3382,6 +3682,7 @@ impl<'de> de::Deserializer<'de> for BorrowedValue<'de> {
             _ => Err(Error::new(ErrorKind::UnexpectedType, 0)),
         }
     }
+
     fn deserialize_newtype_struct<V: Visitor<'de>>(self, name: &str, v: V) -> Result<V::Value> {
         if name == crate::value::VALUE_MARKER {
             let mut bytes = Vec::new();
@@ -3401,6 +3702,7 @@ struct ValueEnum<'de> {
 impl<'de> EnumAccess<'de> for ValueEnum<'de> {
     type Error = Error;
     type Variant = ValueVariant<'de>;
+
     fn variant_seed<V: DeserializeSeed<'de>>(self, seed: V) -> Result<(V::Value, Self::Variant)> {
         let variant = seed.deserialize(
             <String as IntoDeserializer<'de, Error>>::into_deserializer(self.variant),
@@ -3413,15 +3715,19 @@ struct ValueVariant<'de>(BorrowedValue<'de>);
 
 impl<'de> VariantAccess<'de> for ValueVariant<'de> {
     type Error = Error;
+
     fn unit_variant(self) -> Result<()> {
         <()>::deserialize(self.0)
     }
+
     fn newtype_variant_seed<T: DeserializeSeed<'de>>(self, seed: T) -> Result<T::Value> {
         seed.deserialize(self.0)
     }
+
     fn tuple_variant<V: Visitor<'de>>(self, len: usize, visitor: V) -> Result<V::Value> {
         de::Deserializer::deserialize_tuple(self.0, len, visitor)
     }
+
     fn struct_variant<V: Visitor<'de>>(
         self,
         fields: &'static [&'static str],
@@ -3472,8 +3778,10 @@ struct Pairs<'de> {
     x: alloc::vec::IntoIter<(BorrowedValue<'de>, BorrowedValue<'de>)>,
     value: Option<BorrowedValue<'de>>,
 }
+
 impl<'de> MapAccess<'de> for Pairs<'de> {
     type Error = Error;
+
     fn next_key_seed<K: DeserializeSeed<'de>>(&mut self, s: K) -> Result<Option<K::Value>> {
         match self.x.next() {
             Some((k, v)) => {
@@ -3483,6 +3791,7 @@ impl<'de> MapAccess<'de> for Pairs<'de> {
             None => Ok(None),
         }
     }
+
     fn next_value_seed<V: DeserializeSeed<'de>>(&mut self, s: V) -> Result<V::Value> {
         s.deserialize(self.value.take().ok_or(Error::new(ErrorKind::Message, 0))?)
     }

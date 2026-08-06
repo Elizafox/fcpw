@@ -12,6 +12,7 @@ use crate::{Event, Parser};
 pub struct Tagged<T> {
     /// The outer semantic tag, or `None` for an untagged value.
     pub tag: Option<u64>,
+
     /// The value enclosed by the tag.
     pub value: T,
 }
@@ -42,9 +43,11 @@ impl<T: Serialize> Serialize for Tagged<T> {
         let mut header = [0; 9];
         let header_len = encode_tag_header(tag, &mut header);
         let payload_len = bytes.len();
+
         bytes.resize(payload_len + header_len, 0);
         bytes.copy_within(..payload_len, header_len);
         bytes[..header_len].copy_from_slice(&header[..header_len]);
+
         serializer
             .serialize_newtype_struct(crate::value::VALUE_MARKER, &serde_bytes::Bytes::new(&bytes))
     }
@@ -99,7 +102,9 @@ fn decode_tagged<T: serde::de::DeserializeOwned, E: serde::de::Error>(
         Some(Event::Tag(tag)) => Some(tag),
         _ => None,
     };
+
     let payload = tag.map_or(bytes, |_| parser.remaining());
+
     crate::from_slice(payload)
         .map(|value| Tagged { tag, value })
         .map_err(E::custom)

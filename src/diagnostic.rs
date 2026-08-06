@@ -94,6 +94,7 @@ pub fn parse(input: &str) -> Result<Value> {
     if parser.position != parser.bytes.len() {
         return Err(parser.error("trailing diagnostic input"));
     }
+
     Ok(value)
 }
 
@@ -106,6 +107,7 @@ impl DiagnosticParser<'_> {
     fn error(&self, _message: &'static str) -> Error {
         Error::new(ErrorKind::Message, self.position)
     }
+
     fn whitespace(&mut self) {
         while self
             .bytes
@@ -115,6 +117,7 @@ impl DiagnosticParser<'_> {
             self.position += 1;
         }
     }
+
     fn take(&mut self, byte: u8) -> bool {
         self.whitespace();
         if self.bytes.get(self.position) == Some(&byte) {
@@ -124,6 +127,7 @@ impl DiagnosticParser<'_> {
             false
         }
     }
+
     fn value(&mut self) -> Result<Value> {
         self.whitespace();
         match self.bytes.get(self.position).copied() {
@@ -138,6 +142,7 @@ impl DiagnosticParser<'_> {
             _ => Err(self.error("expected diagnostic value")),
         }
     }
+
     fn keyword(&mut self, keyword: &[u8]) -> bool {
         if self.bytes.get(self.position..self.position + keyword.len()) == Some(keyword) {
             self.position += keyword.len();
@@ -146,6 +151,7 @@ impl DiagnosticParser<'_> {
             false
         }
     }
+
     fn string(&mut self) -> Result<String> {
         self.position += 1;
         let mut result = String::new();
@@ -177,6 +183,7 @@ impl DiagnosticParser<'_> {
             }
         }
     }
+
     fn array(&mut self) -> Result<Value> {
         self.position += 1;
         let mut values = alloc::vec::Vec::new();
@@ -194,6 +201,7 @@ impl DiagnosticParser<'_> {
         }
         Ok(Value::Array(values))
     }
+
     fn map(&mut self) -> Result<Value> {
         self.position += 1;
         let mut entries = alloc::vec::Vec::new();
@@ -215,6 +223,7 @@ impl DiagnosticParser<'_> {
         }
         Ok(Value::Map(entries))
     }
+
     fn number(&mut self) -> Result<Value> {
         let start = self.position;
         while self

@@ -7,11 +7,12 @@ use std::sync::mpsc;
 
 use crate::{RawValue, Result, SliceDecoder, from_slice};
 
-#[derive(Clone, Copy, Debug)]
 /// Thresholds controlling when parallel decoding begins.
+#[derive(Clone, Copy, Debug)]
 pub struct ParallelOptions {
     /// Inputs below this total byte count are decoded sequentially.
     pub min_bytes: usize,
+
     /// Batches below this item count are decoded sequentially.
     pub min_items: usize,
 }
@@ -45,12 +46,14 @@ pub fn from_sequence_with_options<T: DeserializeOwned + Send>(
         && (input.len() < options.min_bytes || items.len() < options.min_items)
     {
         let index = items.len();
+
         items.push(
             decoder
                 .raw_structural()
                 .map_err(|error| error.with_item(index))?,
         );
     }
+
     if input.len() < options.min_bytes || items.len() < options.min_items {
         decode_raw(&items, input.len(), options)
     } else {
@@ -71,6 +74,7 @@ pub fn from_slices_with_options<T: DeserializeOwned + Send>(
     options: ParallelOptions,
 ) -> Result<Vec<T>> {
     let total: usize = inputs.iter().map(|input| input.len()).sum();
+
     if inputs.len() < options.min_items || total < options.min_bytes {
         inputs
             .iter()
@@ -129,12 +133,16 @@ fn decode_raw_pipelined<T: DeserializeOwned + Send>(
                 if let Some(item) = initial.next() {
                     chunk.push(item);
                     item_count += 1;
+
                     continue;
                 }
+
                 if decoder.remaining().is_empty() {
                     break;
                 }
+
                 let index = item_count;
+
                 match decoder
                     .raw_structural()
                     .map_err(|error| error.with_item(index))
@@ -149,10 +157,13 @@ fn decode_raw_pipelined<T: DeserializeOwned + Send>(
                     }
                 }
             }
+
             if boundary_error.is_some() || chunk.is_empty() {
                 break;
             }
+
             let sender = sender.clone();
+
             scope.spawn_fifo(move |_| {
                 let values = chunk
                     .iter()
@@ -165,18 +176,24 @@ fn decode_raw_pipelined<T: DeserializeOwned + Send>(
             });
         }
     });
+
     drop(sender);
 
     // Preserve the boundary-first error precedence of the non-pipelined path.
     if let Some(error) = boundary_error {
         return Err(error);
     }
+
     let mut chunks: Vec<_> = receiver.into_iter().collect();
+
     // FIFO scheduling is only a preference; restore exact wire order here.
     chunks.sort_unstable_by_key(|(start, _)| *start);
+
     let mut output = Vec::with_capacity(item_count);
+
     for (_, values) in chunks {
         output.append(&mut values?);
     }
+
     Ok(output)
 }

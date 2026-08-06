@@ -25,20 +25,24 @@ pub struct SliceOutput<'a> {
     buf: &'a mut [u8],
     len: usize,
 }
+
 impl<'a> SliceOutput<'a> {
     /// Creates an empty output that writes into `buf`.
     pub fn new(buf: &'a mut [u8]) -> Self {
         Self { buf, len: 0 }
     }
+
     /// Returns the number of bytes written.
     pub fn len(&self) -> usize {
         self.len
     }
+
     /// Returns whether no bytes have been written.
     pub fn is_empty(&self) -> bool {
         self.len == 0
     }
 }
+
 impl Output for SliceOutput<'_> {
     fn write_all(&mut self, bytes: &[u8]) -> Result<()> {
         let end = self
@@ -59,15 +63,18 @@ impl Output for SliceOutput<'_> {
 pub struct Encoder<W> {
     output: W,
 }
+
 impl<W: Output> Encoder<W> {
     /// Creates an encoder writing to `output`.
     pub fn new(output: W) -> Self {
         Self { output }
     }
+
     /// Finishes encoding and returns the output destination.
     pub fn into_inner(self) -> W {
         self.output
     }
+
     fn head(&mut self, major: u8, n: u64) -> Result<()> {
         let mut b = [0u8; 9];
         let len = if n < 24 {
@@ -92,10 +99,12 @@ impl<W: Output> Encoder<W> {
         };
         self.output.write_all(&b[..len])
     }
+
     /// Encodes an unsigned integer.
     pub fn unsigned(&mut self, n: u64) -> Result<()> {
         self.head(0, n)
     }
+
     /// Encodes a negative integer, rejecting nonnegative values.
     pub fn negative(&mut self, n: i64) -> Result<()> {
         if n >= 0 {
@@ -103,8 +112,9 @@ impl<W: Output> Encoder<W> {
         }
         self.head(1, !n as u64)
     }
-    #[inline]
+
     /// Encodes a signed integer.
+    #[inline]
     pub fn signed(&mut self, n: i64) -> Result<()> {
         if n >= 0 {
             self.head(0, n as u64)
@@ -112,6 +122,7 @@ impl<W: Output> Encoder<W> {
             self.head(1, !n as u64)
         }
     }
+
     /// Encodes an integer representable by CBOR major types 0 or 1.
     pub fn integer(&mut self, n: i128) -> Result<()> {
         if n >= 0 {
@@ -126,28 +137,34 @@ impl<W: Output> Encoder<W> {
             )
         }
     }
+
     /// Encodes a definite-length byte string.
     pub fn bytes(&mut self, bytes: &[u8]) -> Result<()> {
         self.head(2, bytes.len() as u64)?;
         self.output.write_all(bytes)
     }
+
     /// Encodes a definite-length UTF-8 text string.
     pub fn text(&mut self, text: &str) -> Result<()> {
         self.head(3, text.len() as u64)?;
         self.output.write_all(text.as_bytes())
     }
+
     /// Encodes the header of a definite-length array.
     pub fn array(&mut self, len: usize) -> Result<()> {
         self.head(4, len as u64)
     }
+
     /// Encodes the header of a definite-length map.
     pub fn map(&mut self, len: usize) -> Result<()> {
         self.head(5, len as u64)
     }
+
     /// Encodes a semantic tag.
     pub fn tag(&mut self, tag: u64) -> Result<()> {
         self.head(6, tag)
     }
+
     /// Encodes an unassigned simple value.
     pub fn simple(&mut self, value: u8) -> Result<()> {
         if value < 20 {
@@ -158,24 +175,29 @@ impl<W: Output> Encoder<W> {
             self.output.write_all(&[0xf8, value])
         }
     }
+
     /// Encodes a Boolean value.
     pub fn bool(&mut self, value: bool) -> Result<()> {
         self.output.write_all(&[if value { 0xf5 } else { 0xf4 }])
     }
+
     /// Encodes the null value.
     pub fn null(&mut self) -> Result<()> {
         self.output.write_all(&[0xf6])
     }
+
     /// Encodes the undefined value.
     pub fn undefined(&mut self) -> Result<()> {
         self.output.write_all(&[0xf7])
     }
+
     /// Encodes `value` at its source binary32 width without narrowing it.
     pub fn f32(&mut self, value: f32) -> Result<()> {
         let bytes = value.to_bits().to_be_bytes();
         self.output
             .write_all(&[0xfa, bytes[0], bytes[1], bytes[2], bytes[3]])
     }
+
     /// Encodes `value` at its source binary64 width without narrowing it.
     pub fn f64(&mut self, value: f64) -> Result<()> {
         let bytes = value.to_bits().to_be_bytes();
@@ -183,10 +205,12 @@ impl<W: Output> Encoder<W> {
             0xfb, bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
         ])
     }
+
     /// Encodes `value` at the shortest exact CBOR float width and canonicalizes NaN.
     pub fn f32_preferred(&mut self, value: f32) -> Result<()> {
         self.f64_preferred(value as f64)
     }
+
     /// Encodes `value` at the shortest exact CBOR float width and canonicalizes NaN.
     pub fn f64_preferred(&mut self, value: f64) -> Result<()> {
         if value.is_nan() {
@@ -208,6 +232,7 @@ impl<W: Output> Encoder<W> {
             0xfb, bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
         ])
     }
+
     /// Writes already encoded CBOR bytes without validation.
     pub fn raw(&mut self, bytes: &[u8]) -> Result<()> {
         self.output.write_all(bytes)
@@ -249,5 +274,6 @@ pub(crate) fn exact_half(value: f32) -> Option<u16> {
             sign | ((half_exponent as u16) << 10) | (fraction >> 13) as u16
         }
     };
+
     Some(half)
 }

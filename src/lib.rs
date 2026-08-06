@@ -1,52 +1,51 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
-#![doc = r#"
-A fast, variation-tolerant CBOR codec implementing [RFC 8949].
 
-FCPW provides an allocation-free event parser and encoder, zero-copy
-deserialization from byte slices, Serde integration, dynamic CBOR values,
-deterministic encoding and validation, RFC 8742 sequence decoding, and
-optional diagnostic-notation and parallel APIs.
-
-# Quick start
-
-```
-use serde::{Deserialize, Serialize};
-
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
-struct Message<'a> {
-    id: u64,
-    text: &'a str,
-}
-
-let message = Message { id: 7, text: "hello" };
-let encoded = fcpw::to_vec(&message)?;
-let decoded: Message<'_> = fcpw::from_slice(&encoded)?;
-assert_eq!(decoded, message);
-# Ok::<(), fcpw::Error>(())
-```
-
-For allocation-free processing, start with [`SliceDecoder`], [`Parser`], and
-[`Encoder`]. With the `alloc` feature, [`Value`] and [`BorrowedValue`] retain
-CBOR-specific constructs such as tags, simple values, undefined values,
-duplicate map keys, and bignums.
-
-# Cargo features
-
-- **`std`** (default): reader and writer integration; implies `alloc`.
-- **`alloc`** (default): owned values and collection helpers.
-- **`serde`** (default): serialization and deserialization through Serde;
-  implies `alloc`.
-- **`diagnostic`**: RFC 8949 diagnostic notation; implies `alloc`.
-- **`parallel`**: Rayon-backed batch decoding; implies the default public API
-  features.
-
-The scalar parser and encoder remain available with `default-features = false`.
-The crate contains no unsafe code and requires Rust 1.97 or newer.
-
-[RFC 8949]: https://www.rfc-editor.org/rfc/rfc8949
-"#]
+//! A fast, variation-tolerant CBOR codec implementing [RFC 8949].
+//!
+//! FCPW provides an allocation-free event parser and encoder, zero-copy
+//! deserialization from byte slices, Serde integration, dynamic CBOR values,
+//! deterministic encoding and validation, RFC 8742 sequence decoding, and
+//! optional diagnostic-notation and parallel APIs.
+//!
+//! # Quick start
+//!
+//! ```
+//! use serde::{Deserialize, Serialize};
+//!
+//! #[derive(Debug, PartialEq, Serialize, Deserialize)]
+//! struct Message<'a> {
+//!     id: u64,
+//!     text: &'a str,
+//! }
+//!
+//! let message = Message { id: 7, text: "hello" };
+//! let encoded = fcpw::to_vec(&message)?;
+//! let decoded: Message<'_> = fcpw::from_slice(&encoded)?;
+//! assert_eq!(decoded, message);
+//! # Ok::<(), fcpw::Error>(())
+//! ```
+//!
+//! For allocation-free processing, start with [`SliceDecoder`], [`Parser`], and
+//! [`Encoder`]. With the `alloc` feature, [`Value`] and [`BorrowedValue`] retain
+//! CBOR-specific constructs such as tags, simple values, undefined values,
+//! duplicate map keys, and bignums.
+//!
+//! # Cargo features
+//!
+//! - **`std`** (default): reader and writer integration; implies `alloc`.
+//! - **`alloc`** (default): owned values and collection helpers.
+//! - **`serde`** (default): serialization and deserialization through Serde;
+//!   implies `alloc`.
+//! - **`diagnostic`**: RFC 8949 diagnostic notation; implies `alloc`.
+//! - **`parallel`**: Rayon-backed batch decoding; implies the default public API
+//!   features.
+//!
+//! The scalar parser and encoder remain available with `default-features = false`.
+//! The crate contains no unsafe code and requires Rust 1.97 or newer.
+//!
+//! [RFC 8949]: https://www.rfc-editor.org/rfc/rfc8949
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
@@ -64,7 +63,6 @@ mod serde_codec;
 #[cfg(feature = "serde")]
 pub mod tag;
 #[cfg(feature = "alloc")]
-/// Dynamically typed CBOR values and Serde conversion helpers.
 pub mod value;
 
 pub use decode::{Event, Parser, RawValue, SequenceDecoder, SliceDecoder};
@@ -150,9 +148,11 @@ impl<W: std::io::Write> Output for IoWrite<W> {
                 Err(error) => return Err(Error::from_io(error, self.offset)),
             }
         }
+
         Ok(())
     }
 }
+
 #[cfg(feature = "alloc")]
 pub use value::{BorrowedValue, Value};
 
@@ -176,6 +176,7 @@ pub fn from_reader_with_buffer<T: serde::de::DeserializeOwned, R: std::io::Read>
     use std::io::Read as _;
 
     buffer.clear();
+
     let result = (|| loop {
         let chunk_size = buffer.len().max(INITIAL_CHUNK_SIZE);
         let before = buffer.len();
@@ -183,9 +184,11 @@ pub fn from_reader_with_buffer<T: serde::de::DeserializeOwned, R: std::io::Read>
             .take(chunk_size as u64)
             .read_to_end(buffer)
             .map_err(|error| Error::from_io(error, buffer.len()))?;
+
         if buffer.len() == before {
             return from_slice(buffer);
         }
+
         match from_slice(buffer) {
             Ok(value) => {
                 let mut trailing = [0];
@@ -206,7 +209,9 @@ pub fn from_reader_with_buffer<T: serde::de::DeserializeOwned, R: std::io::Read>
             Err(error) => return Err(error),
         }
     })();
+
     buffer.clear();
+
     result
 }
 
@@ -269,6 +274,7 @@ impl<R: std::io::Read> ReaderDeserializer<R> {
                             self.buffer.clear();
                             self.start = 0;
                         }
+
                         return Ok(Some(value));
                     }
                     Err(error) if error.kind() == ErrorKind::Eof && !self.eof => {}
@@ -285,8 +291,10 @@ impl<R: std::io::Read> ReaderDeserializer<R> {
                 self.buffer.truncate(self.buffer.len() - self.start);
                 self.start = 0;
             }
+
             let before = self.buffer.len();
             self.buffer.resize(before + 8 * 1024, 0);
+
             let read = loop {
                 match self.reader.read(&mut self.buffer[before..]) {
                     Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
@@ -297,6 +305,7 @@ impl<R: std::io::Read> ReaderDeserializer<R> {
                     Ok(read) => break read,
                 }
             };
+
             self.buffer.truncate(before + read);
             self.eof = read == 0;
         }
@@ -340,7 +349,9 @@ pub fn validate_deterministic(input: &[u8]) -> Result<()> {
         validation: Validation::Deterministic,
         ..DecodeOptions::default()
     };
+
     let mut decoder = SliceDecoder::with_options(input, options);
+
     decoder.skip()?;
     decoder.finish()
 }
@@ -355,6 +366,8 @@ pub fn from_slice_value(input: &[u8]) -> Result<Value> {
 /// Encodes a dynamic value into a new buffer.
 pub fn to_vec_value(value: &Value) -> Result<alloc::vec::Vec<u8>> {
     let mut out = alloc::vec::Vec::new();
+
     value.encode(&mut Encoder::new(&mut out))?;
+
     Ok(out)
 }

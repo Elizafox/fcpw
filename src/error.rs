@@ -9,31 +9,44 @@ pub type Result<T> = core::result::Result<T, Error>;
 pub enum ErrorKind {
     /// The input ended before the current item was complete.
     Eof,
+
     /// An initial byte contained reserved or invalid additional information.
     InvalidAdditionalInfo,
+
     /// The encountered CBOR type did not match the requested type.
     UnexpectedType,
+
     /// A break code appeared outside its permitted position.
     UnexpectedBreak,
+
     /// A text string was not valid UTF-8.
     InvalidUtf8,
+
     /// An integer cannot be represented by the requested Rust type.
     IntegerOverflow,
+
     /// The configured nesting-depth limit was exceeded.
     DepthLimit,
+
     /// The configured collection-length limit was exceeded.
     CollectionLimit,
+
     /// Bytes remain after the expected item.
     TrailingData,
+
     /// Input violated deterministic CBOR encoding requirements.
     NonDeterministic,
+
     /// A deterministic map contained duplicate encoded keys.
     DuplicateKey,
+
     /// The provided output buffer lacks sufficient capacity.
     OutputTooSmall,
+
     /// An underlying reader or writer reported an I/O error.
     #[cfg(feature = "std")]
     Io,
+
     /// An underlying serializer reported an opaque error.
     Message,
 }
@@ -60,23 +73,28 @@ impl Error {
             io: None,
         }
     }
+
     /// Returns this error's category.
     pub const fn kind(&self) -> ErrorKind {
         self.kind
     }
+
     /// Returns the byte offset at which the error was detected.
     pub const fn offset(&self) -> usize {
         self.offset
     }
+
     /// Returns the zero-based sequence item index, when available.
     pub const fn item_index(&self) -> Option<usize> {
         self.item
     }
+
     /// Returns the underlying I/O error, when this error came from a reader or writer.
     #[cfg(feature = "std")]
     pub fn io_error(&self) -> Option<&std::io::Error> {
         self.io.as_ref()
     }
+
     #[cfg(feature = "std")]
     pub(crate) fn from_io(error: std::io::Error, offset: usize) -> Self {
         Self {

@@ -23,32 +23,43 @@ use crate::{Encoder, Error, ErrorKind, Output, Result};
 #[cfg(feature = "serde")]
 pub(crate) const VALUE_MARKER: &str = "$fcpw::Value";
 
+/// A dynamically typed CBOR value that borrows strings when possible.
 #[derive(Clone, Debug, PartialEq)]
 #[non_exhaustive]
-/// A dynamically typed CBOR value that borrows strings when possible.
 pub enum BorrowedValue<'de> {
     /// An unsigned integer.
     Unsigned(u64),
+
     /// A negative integer.
     Negative(i128),
+
     /// A byte string, borrowed for definite-length input when possible.
     Bytes(Cow<'de, [u8]>),
+
     /// A text string, borrowed for definite-length input when possible.
     Text(Cow<'de, str>),
+
     /// An array of values.
     Array(Vec<Self>),
+
     /// An ordered collection of key-value pairs.
     Map(Vec<(Self, Self)>),
+
     /// A semantic tag and its tagged value.
     Tag(u64, alloc::boxed::Box<Self>),
+
     /// An unassigned simple value.
     Simple(u8),
+
     /// A Boolean value.
     Bool(bool),
+
     /// The null value.
     Null,
+
     /// The undefined value.
     Undefined,
+
     /// A floating-point value represented as binary64.
     Float(f64),
 }
@@ -59,26 +70,37 @@ pub enum BorrowedValue<'de> {
 pub enum Value {
     /// An unsigned integer.
     Unsigned(u64),
+
     /// A negative integer.
     Negative(i128),
+
     /// A byte string.
     Bytes(Vec<u8>),
+
     /// A UTF-8 text string.
     Text(String),
+
     /// An array of values.
     Array(Vec<Self>),
+
     /// An ordered collection of key-value pairs.
     Map(Vec<(Self, Self)>),
+
     /// A semantic tag and its tagged value.
     Tag(u64, alloc::boxed::Box<Self>),
+
     /// An unassigned simple value.
     Simple(u8),
+
     /// A Boolean value.
     Bool(bool),
+
     /// The null value.
     Null,
+
     /// The undefined value.
     Undefined,
+
     /// A floating-point value represented as binary64.
     Float(f64),
 }
@@ -148,38 +170,47 @@ impl Value {
     pub const fn is_bytes(&self) -> bool {
         matches!(self, Self::Bytes(_))
     }
+
     /// Returns `true` if this is a text string.
     pub const fn is_text(&self) -> bool {
         matches!(self, Self::Text(_))
     }
+
     /// Returns `true` if this is an array.
     pub const fn is_array(&self) -> bool {
         matches!(self, Self::Array(_))
     }
+
     /// Returns `true` if this is a map.
     pub const fn is_map(&self) -> bool {
         matches!(self, Self::Map(_))
     }
+
     /// Returns `true` if this is a tagged value.
     pub const fn is_tag(&self) -> bool {
         matches!(self, Self::Tag(_, _))
     }
+
     /// Returns `true` if this is an unassigned simple value.
     pub const fn is_simple(&self) -> bool {
         matches!(self, Self::Simple(_))
     }
+
     /// Returns `true` if this is a Boolean.
     pub const fn is_bool(&self) -> bool {
         matches!(self, Self::Bool(_))
     }
+
     /// Returns `true` if this is null.
     pub const fn is_null(&self) -> bool {
         matches!(self, Self::Null)
     }
+
     /// Returns `true` if this is undefined.
     pub const fn is_undefined(&self) -> bool {
         matches!(self, Self::Undefined)
     }
+
     /// Returns `true` if this is a floating-point value.
     pub const fn is_float(&self) -> bool {
         matches!(self, Self::Float(_))
@@ -213,6 +244,7 @@ impl Value {
             None
         }
     }
+
     /// Mutably borrows the byte string, if present.
     pub fn as_bytes_mut(&mut self) -> Option<&mut Vec<u8>> {
         if let Self::Bytes(value) = self {
@@ -221,6 +253,7 @@ impl Value {
             None
         }
     }
+
     /// Borrows the text string, if present.
     pub fn as_text(&self) -> Option<&str> {
         if let Self::Text(value) = self {
@@ -229,6 +262,7 @@ impl Value {
             None
         }
     }
+
     /// Mutably borrows the text string, if present.
     pub fn as_text_mut(&mut self) -> Option<&mut String> {
         if let Self::Text(value) = self {
@@ -237,6 +271,7 @@ impl Value {
             None
         }
     }
+
     /// Borrows the array, if present.
     pub fn as_array(&self) -> Option<&[Self]> {
         if let Self::Array(value) = self {
@@ -245,6 +280,7 @@ impl Value {
             None
         }
     }
+
     /// Mutably borrows the array, if present.
     pub fn as_array_mut(&mut self) -> Option<&mut Vec<Self>> {
         if let Self::Array(value) = self {
@@ -253,6 +289,7 @@ impl Value {
             None
         }
     }
+
     /// Borrows the ordered map entries, if present.
     ///
     /// The slice retains insertion/wire order and may contain duplicate keys.
@@ -263,6 +300,7 @@ impl Value {
             None
         }
     }
+
     /// Mutably borrows the ordered map entries, if present.
     pub fn as_map_mut(&mut self) -> Option<&mut Vec<(Self, Self)>> {
         if let Self::Map(value) = self {
@@ -271,6 +309,7 @@ impl Value {
             None
         }
     }
+
     /// Returns the tag number and tagged value, if present.
     pub fn as_tag(&self) -> Option<(u64, &Self)> {
         if let Self::Tag(tag, value) = self {
@@ -279,6 +318,7 @@ impl Value {
             None
         }
     }
+
     /// Returns the simple value, if present.
     pub const fn as_simple(&self) -> Option<u8> {
         if let Self::Simple(value) = self {
@@ -287,6 +327,7 @@ impl Value {
             None
         }
     }
+
     /// Returns the Boolean, if present.
     pub const fn as_bool(&self) -> Option<bool> {
         if let Self::Bool(value) = self {
@@ -295,6 +336,7 @@ impl Value {
             None
         }
     }
+
     /// Returns the floating-point value, if present.
     pub const fn as_float(&self) -> Option<f64> {
         if let Self::Float(value) = self {
@@ -312,6 +354,7 @@ impl Value {
             Err(self)
         }
     }
+
     /// Extracts the text string without cloning, or returns the original value.
     pub fn into_text(self) -> core::result::Result<String, Self> {
         if let Self::Text(value) = self {
@@ -320,6 +363,7 @@ impl Value {
             Err(self)
         }
     }
+
     /// Extracts the array without cloning, or returns the original value.
     pub fn into_array(self) -> core::result::Result<Vec<Self>, Self> {
         if let Self::Array(value) = self {
@@ -328,6 +372,7 @@ impl Value {
             Err(self)
         }
     }
+
     /// Extracts the ordered map entries without cloning, or returns the original value.
     pub fn into_map(self) -> core::result::Result<Vec<(Self, Self)>, Self> {
         if let Self::Map(value) = self {
@@ -377,46 +422,55 @@ impl From<bool> for Value {
         Self::Bool(value)
     }
 }
+
 impl From<()> for Value {
     fn from((): ()) -> Self {
         Self::Null
     }
 }
+
 impl From<f32> for Value {
     fn from(value: f32) -> Self {
         Self::Float(value.into())
     }
 }
+
 impl From<f64> for Value {
     fn from(value: f64) -> Self {
         Self::Float(value)
     }
 }
+
 impl From<String> for Value {
     fn from(value: String) -> Self {
         Self::Text(value)
     }
 }
+
 impl From<&str> for Value {
     fn from(value: &str) -> Self {
         Self::Text(value.into())
     }
 }
+
 impl From<&[u8]> for Value {
     fn from(value: &[u8]) -> Self {
         Self::Bytes(value.into())
     }
 }
+
 impl From<Vec<u8>> for Value {
     fn from(value: Vec<u8>) -> Self {
         Self::Bytes(value)
     }
 }
+
 impl From<Vec<Value>> for Value {
     fn from(value: Vec<Value>) -> Self {
         Self::Array(value)
     }
 }
+
 impl From<Vec<(Value, Value)>> for Value {
     fn from(value: Vec<(Value, Value)>) -> Self {
         Self::Map(value)
@@ -452,6 +506,7 @@ fn integer_overflow() -> Error {
 
 impl TryFrom<Value> for bool {
     type Error = Error;
+
     fn try_from(value: Value) -> Result<Self> {
         if let Value::Bool(value) = value {
             Ok(value)
@@ -460,8 +515,10 @@ impl TryFrom<Value> for bool {
         }
     }
 }
+
 impl TryFrom<Value> for f64 {
     type Error = Error;
+
     fn try_from(value: Value) -> Result<Self> {
         if let Value::Float(value) = value {
             Ok(value)
@@ -470,26 +527,34 @@ impl TryFrom<Value> for f64 {
         }
     }
 }
+
 impl TryFrom<Value> for String {
     type Error = Error;
+
     fn try_from(value: Value) -> Result<Self> {
         value.into_text().map_err(|_| unexpected_type())
     }
 }
+
 impl TryFrom<Value> for Vec<u8> {
     type Error = Error;
+
     fn try_from(value: Value) -> Result<Self> {
         value.into_bytes().map_err(|_| unexpected_type())
     }
 }
+
 impl TryFrom<Value> for Vec<Value> {
     type Error = Error;
+
     fn try_from(value: Value) -> Result<Self> {
         value.into_array().map_err(|_| unexpected_type())
     }
 }
+
 impl TryFrom<Value> for Vec<(Value, Value)> {
     type Error = Error;
+
     fn try_from(value: Value) -> Result<Self> {
         value.into_map().map_err(|_| unexpected_type())
     }
@@ -613,9 +678,11 @@ struct ValueVisitor;
 #[cfg(feature = "serde")]
 impl<'de> serde::de::Visitor<'de> for ValueVisitor {
     type Value = Value;
+
     fn expecting(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str("a CBOR value")
     }
+
     fn visit_newtype_struct<D: serde::Deserializer<'de>>(
         self,
         deserializer: D,
