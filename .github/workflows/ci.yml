@@ -39,10 +39,10 @@ jobs:
         run: cargo fmt --all -- --check
       - name: Build minimal feature combinations
         run: |
-          cargo check --locked --no-default-features
-          cargo check --locked --no-default-features --features alloc
+          cargo check --no-default-features
+          cargo check --no-default-features --features alloc
       - name: Test all features
-        run: cargo test --locked --all-features
+        run: cargo test --all-features
 
   freebsd:
     name: FreeBSD 15.1
@@ -66,9 +66,9 @@ jobs:
         shell: cpa.sh {0}
         run: |
           . "$HOME/.cargo/env"
-          cargo check --locked --no-default-features
-          cargo check --locked --no-default-features --features alloc
-          cargo test --locked --all-features
+          cargo check --no-default-features
+          cargo check --no-default-features --features alloc
+          cargo test --all-features
 
   performance:
     name: Performance
@@ -99,21 +99,21 @@ jobs:
       - name: Measure pull request base
         if: github.event_name == 'pull_request'
         working-directory: baseline
-        run: cargo bench --locked --manifest-path ci/perf/Cargo.toml --bench performance -- --save-baseline pr-base --noplot --color never
+        run: cargo bench --manifest-path ci/perf/Cargo.toml --bench performance -- --save-baseline pr-base --noplot --color never
       - name: Measure current revision against base
         if: github.event_name == 'pull_request'
         working-directory: current
         shell: bash
         run: |
           set -o pipefail
-          cargo bench --locked --manifest-path ci/perf/Cargo.toml --bench performance -- --baseline pr-base --noplot --color never | tee performance.txt
+          cargo bench --manifest-path ci/perf/Cargo.toml --bench performance -- --baseline pr-base --noplot --color never | tee performance.txt
       - name: Measure current revision
         if: github.event_name != 'pull_request'
         working-directory: current
         shell: bash
         run: |
           set -o pipefail
-          cargo bench --locked --manifest-path ci/perf/Cargo.toml --bench performance -- --save-baseline current --noplot --color never | tee performance.txt
+          cargo bench --manifest-path ci/perf/Cargo.toml --bench performance -- --save-baseline current --noplot --color never | tee performance.txt
       - name: Publish performance summary
         working-directory: current
         shell: bash
