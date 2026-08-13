@@ -103,22 +103,24 @@ enabled when it can retain the scalar implementation as its semantic oracle.
 Criterion benchmarks compare FCPW with
 [`cbor4ii`](https://crates.io/crates/cbor4ii),
 [`serde_cbor`](https://crates.io/crates/serde_cbor), and
-[`ciborium`](https://crates.io/crates/ciborium). The latest local run produced
+[`ciborium`](https://crates.io/crates/ciborium), and
+[`minicbor`](https://crates.io/crates/minicbor). The latest local run produced
 the following Criterion time estimates; lower is better and the fastest result
 in each row is bold.
 
-| Operation            |   Input |        FCPW | cbor4ii | serde_cbor | Ciborium |
-| -------------------- | ------: | ----------: | ------: | ---------: | -------: |
-| Decode small record  |   503 B |  **310 ns** |  454 ns |     399 ns |  1.46 µs |
-| Decode medium record | 7,210 B | **5.73 µs** | 7.43 µs |    6.41 µs |  20.6 µs |
-| Encode small record  |   503 B |  **183 ns** |  341 ns |     487 ns |   472 ns |
-| Encode medium record | 7,210 B | **1.70 µs** | 1.92 µs |    3.86 µs |  3.60 µs |
+| Operation            |   Input |        FCPW | cbor4ii | serde_cbor | Ciborium | minicbor |
+| -------------------- | ------: | ----------: | ------: | ---------: | -------: | -------: |
+| Decode small record  |   503 B |  **295 ns** |  515 ns |     444 ns |  1.40 µs |   501 ns |
+| Decode medium record | 7,210 B | **5.92 µs** | 7.78 µs |    6.82 µs |  21.1 µs |  7.10 µs |
+| Encode small record  |   503 B |  **182 ns** |  357 ns |     492 ns |   471 ns |   523 ns |
+| Encode medium record | 7,210 B | **1.73 µs** | 2.03 µs |    4.13 µs |  3.91 µs |  4.82 µs |
 
-These results were measured on August 5, 2026, with Rust 1.97.1 on an Intel
-Core Ultra 7 155H running Linux, using FCPW 0.1.0, cbor4ii 1.2.2,
-serde_cbor 0.11.2, Ciborium 0.2.2, and Criterion 0.8.2. All four
-implementations encode these workloads to the same size. Results vary by
-hardware and toolchain; run `cargo bench --bench codec` to measure the
+These results were measured on August 13, 2026, with Rust 1.97.1 on an Intel
+Core Ultra 7 155H running Linux, using FCPW 0.1.3, cbor4ii 1.2.2,
+serde_cbor 0.11.2, Ciborium 0.2.2, minicbor 2.3.0 through minicbor-serde 0.7.1,
+and Criterion 0.8.2. All five implementations encode these workloads to the
+same size. Results vary by hardware and toolchain; run
+`cargo bench --bench codec` to measure the
 [`benches/codec.rs`](benches/codec.rs) suite locally.
 
 ## MSRV and licensing

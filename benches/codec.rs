@@ -58,6 +58,10 @@ fn cbor4ii_bytes(value: &Record) -> Vec<u8> {
     cbor4ii::serde::to_vec(Vec::new(), value).unwrap()
 }
 
+fn minicbor_bytes(value: &Record) -> Vec<u8> {
+    minicbor_serde::to_vec(value).unwrap()
+}
+
 fn codec_benchmarks(c: &mut Criterion) {
     for (name, value) in [("small", record(1)), ("medium", record(16))] {
         let wire = fcpw_bytes(&value);
@@ -66,6 +70,7 @@ fn codec_benchmarks(c: &mut Criterion) {
             ("ciborium", ciborium_bytes(&value).len()),
             ("serde_cbor", serde_cbor_bytes(&value).len()),
             ("cbor4ii", cbor4ii_bytes(&value).len()),
+            ("minicbor", minicbor_bytes(&value).len()),
         ];
         eprintln!("{name} encoded sizes: {outputs:?}");
 
@@ -83,6 +88,9 @@ fn codec_benchmarks(c: &mut Criterion) {
         decode.bench_function(BenchmarkId::new("cbor4ii", wire.len()), |b| {
             b.iter(|| cbor4ii::serde::from_slice::<Record>(black_box(&wire)).unwrap())
         });
+        decode.bench_function(BenchmarkId::new("minicbor", wire.len()), |b| {
+            b.iter(|| minicbor_serde::from_slice::<Record>(black_box(&wire)).unwrap())
+        });
         decode.finish();
 
         let mut encode = c.benchmark_group(format!("encode/{name}"));
@@ -93,6 +101,7 @@ fn codec_benchmarks(c: &mut Criterion) {
             b.iter(|| serde_cbor_bytes(black_box(&value)))
         });
         encode.bench_function("cbor4ii", |b| b.iter(|| cbor4ii_bytes(black_box(&value))));
+        encode.bench_function("minicbor", |b| b.iter(|| minicbor_bytes(black_box(&value))));
         encode.finish();
     }
 }
