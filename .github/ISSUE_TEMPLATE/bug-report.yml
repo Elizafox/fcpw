@@ -1,0 +1,126 @@
+name: Bug report
+description: Report a reproducible problem in fcpw
+title: "[Bug]: "
+labels: []
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for investigating this problem.
+
+        Before submitting, please read CONTRIBUTING.md. Issues must be
+        investigated, meaningfully reviewed, and deliberately submitted by a
+        human. Raw output from automated tools is not sufficient.
+
+        Do not disclose security vulnerabilities in a public issue. Follow the
+        private reporting instructions in SECURITY.md instead.
+
+  - type: input
+    id: version
+    attributes:
+      label: Affected version
+      description: Specify the release, tag, or branch where the problem occurs.
+      placeholder: "For example: v1.2.3 or main"
+    validations:
+      required: true
+
+  - type: input
+    id: commit
+    attributes:
+      label: Reproduced commit
+      description: Provide the full commit hash where applicable.
+      placeholder: "For example: 0123456789abcdef..."
+    validations:
+      required: false
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Problem description
+      description: Clearly and concisely describe the problem.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happened instead? Include relevant errors or output.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: |
+        Provide enough detail for another person to reproduce the problem.
+        For intermittent or environment-dependent problems, describe the
+        conditions under which it occurs.
+      placeholder: |
+        1. Build with ...
+        2. Run ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include relevant OS, compiler, architecture, build options, and dependencies.
+      placeholder: |
+        OS:
+        Architecture:
+        Compiler and version:
+        Build options:
+    validations:
+      required: true
+
+  - type: dropdown
+    id: automated_discovery
+    attributes:
+      label: Automated-tool involvement
+      description: Was this problem initially discovered using an automated or agentic tool?
+      options:
+        - "No"
+        - "Yes"
+    validations:
+      required: true
+
+  - type: textarea
+    id: verification
+    attributes:
+      label: Independent verification and tool details
+      description: |
+        If a tool discovered the problem, identify it and explain how you
+        independently verified the result against main or a supported release.
+        Otherwise, enter "Not applicable."
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Add logs, minimal examples, or other relevant information.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: attestation
+    attributes:
+      label: Contributor attestation
+      options:
+        - label: I personally investigated and reviewed this report, understand its contents, have the right to submit it, and am deliberately submitting it myself in accordance with CONTRIBUTING.md.
+          required: true
