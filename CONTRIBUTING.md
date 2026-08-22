@@ -171,6 +171,7 @@ Agents **MUST NOT** do any of the following:
 - Autonomously interact with the project's issue tracker, pull-request system, code-review system, documentation system, or other public development channels.
 - Open issues, pull requests, or discussions.
 - Submit reviews, approvals, comments, or any other replies.
+- Write issues or communications on behalf of any human.
 - Merge changes.
 
 Agents **MUST** do the following:
